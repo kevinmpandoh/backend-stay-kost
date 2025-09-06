@@ -1,0 +1,186 @@
+import { RoomTypeStatus } from "@/modules/room-type/room-type.type";
+
+const kostTypeData = [
+  {
+    name: "Standard Room",
+    price: 1500000,
+    size: "3x3",
+    status: RoomTypeStatus.ACTIVE,
+  },
+  {
+    name: "Deluxe Room",
+    price: 2000000,
+    size: "4x4",
+    status: RoomTypeStatus.ACTIVE,
+  },
+  {
+    name: "Suite Room",
+    price: 2500000,
+    size: "5x5",
+    status: RoomTypeStatus.ACTIVE,
+  },
+  {
+    name: "Premium Room",
+    price: 2800000,
+    size: "5x6",
+    status: RoomTypeStatus.ACTIVE,
+  },
+  {
+    name: "Economy Room",
+    price: 1200000,
+    size: "2.5x3",
+    status: RoomTypeStatus.ACTIVE,
+  },
+  {
+    name: "Single Room",
+    price: 1300000,
+    size: "3x2.5",
+    status: RoomTypeStatus.ACTIVE,
+  },
+  {
+    name: "King Room",
+    price: 3000000,
+    size: "6x6",
+    status: RoomTypeStatus.ACTIVE,
+  },
+  {
+    name: "Queen Room",
+    price: 2700000,
+    size: "5x5",
+    status: RoomTypeStatus.ACTIVE,
+  },
+  {
+    name: "Budget Room",
+    price: 1000000,
+    size: "2.5x2.5",
+    status: RoomTypeStatus.ACTIVE,
+  },
+  {
+    name: "Compact Room",
+    price: 1100000,
+    size: "2x2.5",
+    status: RoomTypeStatus.ACTIVE,
+  },
+  {
+    name: "Spacious Room",
+    price: 2200000,
+    size: "4.5x5",
+    status: RoomTypeStatus.ACTIVE,
+  },
+  {
+    name: "Comfort Room",
+    price: 1800000,
+    size: "4x3.5",
+    status: RoomTypeStatus.ACTIVE,
+  },
+  {
+    name: "Modern Room",
+    price: 2300000,
+    size: "5x4",
+    status: RoomTypeStatus.ACTIVE,
+  },
+  {
+    name: "Minimalist Room",
+    price: 1400000,
+    size: "3x3",
+    status: RoomTypeStatus.ACTIVE,
+  },
+  {
+    name: "Family Room",
+    price: 3200000,
+    size: "6x7",
+    status: RoomTypeStatus.ACTIVE,
+  },
+  {
+    name: "Elegant Room",
+    price: 2600000,
+    size: "5x5",
+    status: RoomTypeStatus.ACTIVE,
+  },
+  {
+    name: "Executive Room",
+    price: 3500000,
+    size: "6x6",
+    status: RoomTypeStatus.ACTIVE,
+  },
+  {
+    name: "Stylish Room",
+    price: 2400000,
+    size: "5x4.5",
+    status: RoomTypeStatus.ACTIVE,
+  },
+  {
+    name: "Luxury Room",
+    price: 4000000,
+    size: "7x6",
+    status: RoomTypeStatus.ACTIVE,
+  },
+  {
+    name: "VIP Room",
+    price: 4200000,
+    size: "7x7",
+    status: RoomTypeStatus.ACTIVE,
+  },
+  {
+    name: "Classic Room",
+    price: 1600000,
+    size: "3.5x3.5",
+    status: RoomTypeStatus.ACTIVE,
+  },
+  {
+    name: "Urban Room",
+    price: 1900000,
+    size: "4x3",
+    status: RoomTypeStatus.ACTIVE,
+  },
+  {
+    name: "Compact Deluxe",
+    price: 1750000,
+    size: "3.5x3",
+    status: RoomTypeStatus.ACTIVE,
+  },
+  {
+    name: "Grand Suite",
+    price: 4500000,
+    size: "8x7",
+    status: RoomTypeStatus.ACTIVE,
+  },
+  {
+    name: "Studio Room",
+    price: 2200000,
+    size: "4x4.5",
+    status: RoomTypeStatus.ACTIVE,
+  },
+  {
+    name: "Private Room",
+    price: 2100000,
+    size: "4.5x4",
+    status: RoomTypeStatus.ACTIVE,
+  },
+  {
+    name: "Serenity Room",
+    price: 2800000,
+    size: "5.5x5",
+    status: RoomTypeStatus.ACTIVE,
+  },
+  {
+    name: "Zen Room",
+    price: 2300000,
+    size: "5x4",
+    status: RoomTypeStatus.ACTIVE,
+  },
+  {
+    name: "Smart Room",
+    price: 1950000,
+    size: "3.5x4",
+    status: RoomTypeStatus.ACTIVE,
+  },
+  {
+    name: "Harmony Room",
+    price: 1700000,
+    size: "3x3.5",
+    status: RoomTypeStatus.ACTIVE,
+  },
+];
+
+export default kostTypeData;

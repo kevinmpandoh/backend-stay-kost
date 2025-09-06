@@ -1,0 +1,52 @@
+import { Router } from "express";
+import authRoutes from "../modules/auth/auth.route";
+import ruleRoutes from "../modules/rule/rule.route";
+import facilityRoutes from "../modules/facility/facility.route";
+import userRouter from "../modules/user/user.routes";
+import photoRoomRouter from "../modules/photo-room/photo-room.route";
+import photoKostRouter from "../modules/photo-kost/photo-kost.route";
+import kostRouter from "../modules/kost/routes";
+import dashboardRouter from "../modules/dashboard/dashboard.route";
+import roomTypeRouter from "../modules/room-type/room-type.routes";
+import paymentRoutes from "../modules/payment/payment.routes";
+import wishlistRouter from "../modules/wishlist/wishlist.route";
+import chatRouter from "../modules/chat/chat.routes";
+import notificationRouter from "../modules/notification/notification.routes";
+import preferenceRouter from "../modules/preference/preference.route";
+import payoutRouter from "../modules/payout/payout.route";
+import reviewRouter from "../modules/review/review.routes";
+import roomRouter from "../modules/room/room.route";
+import bookingRouter from "../modules/booking/booking.route";
+import invoiceRoutes from "../modules/invoice/invoice.route";
+import packageRouter from "../modules/package/package.route";
+import subscriptionRouter from "../modules/subscription/subscription.route";
+const router = Router();
+
+router.use("/rules", ruleRoutes);
+router.use("/invoices", invoiceRoutes);
+router.use("/facilities", facilityRoutes);
+router.use("/user", userRouter);
+router.use("/room-type", roomTypeRouter);
+router.use("/rooms", roomRouter);
+router.use("/photo-kosts", photoKostRouter);
+router.use("/photo-rooms", photoRoomRouter);
+router.use("/wishlists", wishlistRouter);
+router.use("/chat", chatRouter);
+router.use("/notifications", notificationRouter);
+router.use("/payouts", payoutRouter);
+router.use("/preferences", preferenceRouter);
+
+router.use("/reviews", reviewRouter);
+router.use("/wishlists", wishlistRouter);
+
+router.use("/wishlists", wishlistRouter);
+
+router.use("/packages", packageRouter);
+router.use("/subscriptions", subscriptionRouter);
+router.use("/payments", paymentRoutes);
+router.use("/auth", authRoutes);
+router.use("/dashboard", dashboardRouter);
+router.use("/bookings", bookingRouter);
+router.use("/", kostRouter);
+router.use("/", dashboardRouter);
+export default router;

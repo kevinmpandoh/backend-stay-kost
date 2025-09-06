@@ -1,0 +1,14 @@
+import { Router } from "express";
+import publicRoutes from "./public.routes";
+import tenantRoutes from "./tenant.routes";
+import ownerRoutes from "./owner.routes";
+import adminRoutes from "./admin.routes";
+
+const router = Router();
+
+router.use("/kost", publicRoutes);
+router.use("/tenant/kost", tenantRoutes);
+router.use("/owner/kost", ownerRoutes);
+router.use("/admin/kost", adminRoutes);
+
+export default router;

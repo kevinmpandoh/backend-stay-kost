@@ -1,0 +1,17 @@
+/node_modules
+/.env
+.env.dev
+.env.prod
+.vercel
+
+/coverage
+
+/dist
+/build
+dist
+
+.package-lock.json
+
+# Logs
+logs
+*.log
