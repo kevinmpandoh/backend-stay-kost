@@ -8,6 +8,7 @@ import {
   komentarNetral,
   komentarPositif,
 } from "./data/reviewData";
+import { RoomType } from "@/modules/room-type/room-type.model";
 
 export const seedReviews = async () => {
   await Review.deleteMany();
@@ -50,7 +51,7 @@ export const seedReviews = async () => {
     const withReply = Math.random() < 0.6;
     const isNegativeRating = rating <= 2;
 
-    await Review.create({
+    const review = await Review.create({
       rating,
       comment,
       roomType: booking.roomType._id,
@@ -65,6 +66,12 @@ export const seedReviews = async () => {
           createdAt: new Date(),
         },
       }),
+    });
+
+    await RoomType.findByIdAndUpdate(review._id, {
+      $push: {
+        reviews: review._id,
+      },
     });
   }
 

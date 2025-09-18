@@ -4,126 +4,164 @@ import { Kost } from "../kost/kost.model";
 import mongoose from "mongoose";
 import { RoomStatus } from "../room/room.type";
 import { Invoice } from "../invoice/invoice.model";
+import { userRepository } from "../user/user.repository";
+import { kostRepository } from "../kost/kost.repository";
+import { payoutRepository } from "../payout/payout.repository";
+import { Payout } from "../payout/payout.model";
 
 export const DashboardService = {
   async getOwnerDashboard(ownerId: string) {
-    const totalRequest = await bookingRepository.count({
+    const totalRequests = await bookingRepository.count({
       owner: ownerId,
       status: BookingStatus.PENDING,
     });
-    // Hitung jumlah penyewa yang belum membayar
-    const totalUnpaid = await Invoice.countDocuments({
-      type: "tenant",
-      status: "unpaid",
-    }).populate({
-      path: "booking",
-      match: { owner: ownerId }, // filter hanya booking milik owner ini
-    });
 
-    // Hitung total penyewa yang aktif
+    const totalUnpaidInvoices = await Invoice.aggregate([
+      {
+        $match: {
+          status: "unpaid",
+          dueDate: { $lt: new Date() },
+        },
+      },
+      {
+        $lookup: {
+          from: "bookings",
+          localField: "booking",
+          foreignField: "_id",
+          as: "booking",
+        },
+      },
+      { $unwind: "$booking" },
+      {
+        $match: {
+          "booking.owner": new mongoose.Types.ObjectId(ownerId),
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalAmount: { $sum: "$amount" },
+          totalInvoices: { $sum: 1 },
+        },
+      },
+    ]);
+
     const activeTenants = await bookingRepository.count({
       owner: ownerId,
       status: BookingStatus.ACTIVE,
     });
 
     const totalRooms = await Kost.aggregate([
-      { $match: { pemilik: new mongoose.Types.ObjectId(ownerId) } }, // Cari kost berdasarkan pemilik
+      { $match: { owner: new mongoose.Types.ObjectId(ownerId) } },
       {
         $lookup: {
-          from: "roomTypes", // Gabungkan dengan koleksi KostType
+          from: "roomTypes",
           localField: "_id",
           foreignField: "kost",
           as: "roomTypes",
         },
       },
-      { $unwind: "$roomTypes" }, // Pisahkan array KostType menjadi dokumen individual
+      { $unwind: "$roomTypes" },
       {
         $lookup: {
-          from: "rooms", // Gabungkan dengan koleksi Room
+          from: "rooms",
           localField: "roomTypes._id",
           foreignField: "roomTypes",
           as: "rooms",
         },
       },
-      { $unwind: "$rooms" }, // Pisahkan array rooms menjadi dokumen individual
+      { $unwind: "$rooms" },
       {
         $group: {
           _id: null,
-          total_kamar: { $sum: 1 }, // Hitung semua kamar
-          kamar_tersedia: {
+          total: { $sum: 1 },
+          available: {
             $sum: {
               $cond: [{ $eq: ["$rooms.status", RoomStatus.AVAILABLE] }, 1, 0],
             },
-          }, // Hitung kamar yang tersedia
-          kamar_terisi: {
+          },
+          occupied: {
             $sum: {
               $cond: [{ $eq: ["$rooms.status", RoomStatus.OCCUPIED] }, 1, 0],
             },
-          }, // Hitung kamar yang terisi
+          },
         },
       },
     ]);
 
-    // Hitung total keuntungan dari pembayaran sukses
-    const totalKeuntungan = await Invoice.aggregate([
+    const totalRevenue = await Invoice.aggregate([
       { $match: { type: "tenant", status: "paid" } },
       {
         $lookup: {
-          from: "bookings", // Gabungkan dengan koleksi Room
+          from: "bookings",
           localField: "booking",
           foreignField: "_id",
           as: "booking",
         },
       },
       { $unwind: "$booking" },
-      { $match: { "booking.owner": ownerId } }, // hanya invoice utk booking owner ini
+      { $match: { "booking.owner": ownerId } },
       { $group: { _id: null, total: { $sum: "$amount" } } },
     ]);
 
     const now = new Date();
     const oneYearAgo = new Date(now.getFullYear() - 1, now.getMonth(), 1);
-    const pendapatanPerBulan = await Invoice.aggregate([
+    const monthlyRevenue = await Invoice.aggregate([
       {
         $match: {
-          user: new mongoose.Types.ObjectId(ownerId),
+          // user: new mongoose.Types.ObjectId(ownerId),
           status: "paid",
-          due_date: { $gte: oneYearAgo },
+          dueDate: { $gte: oneYearAgo },
         },
       },
       {
         $group: {
-          _id: { $month: "$dueDate" },
-          total: { $sum: "$amount" },
+          _id: {
+            tahun: { $year: "$dueDate" },
+            bulan: { $month: "$dueDate" },
+          },
+          total: { $sum: "$amount" }, // total keuntungan admin
         },
       },
+      { $sort: { "_id.tahun": 1, "_id.bulan": 1 } },
+      // {
+      //   $group: {
+      //     _id: { $month: "$dueDate" },
+      //     total: { $sum: "$amount" },
+      //   },
+      // },
       { $sort: { _id: 1 } },
     ]);
 
-    const awalBulan = new Date();
-    awalBulan.setDate(1);
-    const akhirBulan = new Date(
-      awalBulan.getFullYear(),
-      awalBulan.getMonth() + 1,
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    const endOfMonth = new Date(
+      startOfMonth.getFullYear(),
+      startOfMonth.getMonth() + 1,
       0
     );
 
-    const tagihanBelumDibayar = await Invoice.aggregate([
+    const unpaidInvoices = await Invoice.aggregate([
       {
         $match: {
-          //   user: new mongoose.Types.ObjectId(ownerId),
           status: "unpaid",
-          due_date: { $gte: awalBulan, $lte: akhirBulan },
+          dueDate: { $gte: startOfMonth, $lte: endOfMonth },
         },
       },
       {
         $lookup: {
-          from: "bookings", // Gabungkan dengan koleksi Room
+          from: "bookings",
           localField: "booking",
           foreignField: "_id",
           as: "booking",
         },
       },
       { $unwind: "$booking" },
+      {
+        $match: {
+          "booking.owner": new mongoose.Types.ObjectId(ownerId),
+        },
+      },
       {
         $lookup: {
           from: "users",
@@ -136,7 +174,7 @@ export const DashboardService = {
       {
         $lookup: {
           from: "rooms",
-          localField: "room",
+          localField: "booking.room",
           foreignField: "_id",
           as: "room",
         },
@@ -144,8 +182,8 @@ export const DashboardService = {
       { $unwind: "$room" },
       {
         $lookup: {
-          from: "roomType",
-          localField: "roomType",
+          from: "roomtypes",
+          localField: "booking.roomType",
           foreignField: "_id",
           as: "roomType",
         },
@@ -154,45 +192,117 @@ export const DashboardService = {
       {
         $project: {
           _id: 1,
-          penyewa: "$tenant.name",
-          kamar: "$room.nomor",
-          tipe_kost: "$roomType.name",
-          jumlah_tagihan: "$amount",
-          jatuh_tempo: "$due_date",
-          invoice: 1,
+          tenant: "$tenant.name",
+          room: "$room.number",
+          roomType: "$roomType.name",
+          amount: "$amount",
+          dueDate: "$dueDate",
+          invoiceNumber: 1,
         },
       },
-      { $sort: { jatuh_tempo: -1 } }, // Urutkan berdasarkan tanggal jatuh tempo
+      { $sort: { dueDate: -1 } },
       { $limit: 5 },
     ]);
 
-    const jumlahPengajuanSewa = await bookingRepository.count({
+    const rentRequests = await bookingRepository.count({
       owner: ownerId,
       status: BookingStatus.PENDING,
-      stopRequest: { $exists: false }, // Bukan pengajuan berhenti
+      stopRequest: { $exists: false },
     });
 
-    const jumlahPengajuanBerhenti = await bookingRepository.count({
+    const stopRequests = await bookingRepository.count({
       owner: ownerId,
       "stopRequest.status": StopRequestStatus.PENDING,
     });
 
     return {
-      totalRequest,
-      totalUnpaid,
-      activeTenants,
-      jumlah_pengajuan_sewa: jumlahPengajuanSewa,
-      jumlah_pengajuan_berhenti: jumlahPengajuanBerhenti,
-      room: {
-        total_kamar: totalRooms.length > 0 ? totalRooms[0].total_kamar : 0,
-        kamar_tersedia:
-          totalRooms.length > 0 ? totalRooms[0].kamar_tersedia : 0,
-        kamar_terisi: totalRooms.length > 0 ? totalRooms[0].kamar_terisi : 0,
+      totalRequests,
+      totalUnpaid: totalUnpaidInvoices[0] || {
+        totalAmount: 0,
+        totalInvoices: 0,
       },
-      total_keuntungan: totalKeuntungan[0]?.total || 0,
-      pendapatanPerBulan,
-      tagihanBelumDibayar,
+      activeTenants,
+      rentRequests,
+      stopRequests,
+      rooms: {
+        total: totalRooms.length > 0 ? totalRooms[0].total : 0,
+        available: totalRooms.length > 0 ? totalRooms[0].available : 0,
+        occupied: totalRooms.length > 0 ? totalRooms[0].occupied : 0,
+      },
+      totalRevenue: totalRevenue[0]?.total || 0,
+      monthlyRevenue,
+      unpaidInvoices,
     };
   },
-  async getAdminDashboard() {},
+
+  async getAdminDashboard() {
+    // Total pengajuan kost (belum disetujui)
+    const totalPengajuanKost = await Kost.countDocuments({
+      status: "pending", // atau field lain sesuai schema kamu
+    });
+
+    // Total penyewa
+    const totalPenyewa = await userRepository.count({ role: "tenant" });
+
+    // Total pemilik kost
+    const totalPemilikKost = await userRepository.count({ role: "owner" });
+
+    // Total kost aktif
+    const totalKostAktif = await kostRepository.count({ isPublished: true });
+
+    // Total keuntungan admin
+    const totalKeuntunganAdmin = await Invoice.aggregate([
+      { $match: { type: "tenant", status: "paid" } },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: "$amount" }, // pastikan invoice punya field admin_fee
+        },
+      },
+    ]);
+
+    // Payout pending
+    const payoutPending = await payoutRepository.count({ status: "pending" });
+
+    // Pendapatan per bulan (1 tahun terakhir)
+    const now = new Date();
+    const oneYearAgo = new Date(now.getFullYear() - 1, now.getMonth(), 1);
+
+    const pendapatanPerBulan = await Invoice.aggregate([
+      {
+        $match: {
+          type: "tenant",
+          status: "paid",
+          dueDate: { $gte: oneYearAgo },
+        },
+      },
+      {
+        $group: {
+          _id: {
+            tahun: { $year: "$dueDate" },
+            bulan: { $month: "$dueDate" },
+          },
+          total: { $sum: "$amount" }, // total keuntungan admin
+        },
+      },
+      { $sort: { "_id.tahun": 1, "_id.bulan": 1 } },
+    ]);
+
+    const payoutHistory = await Payout.find()
+      .populate("owner", "name email") // kalau mau tampilkan data pemilik
+      .sort({ createdAt: -1 })
+      .limit(10)
+      .lean();
+
+    return {
+      totalKostRequest: totalPengajuanKost,
+      totalTenants: totalPenyewa,
+      totalOwners: totalPemilikKost,
+      totalKostActive: totalKostAktif,
+      monthlyIncome: totalKeuntunganAdmin[0]?.total || 0,
+      payout_pending: payoutPending,
+      pendapatan_per_bulan: pendapatanPerBulan,
+      payoutHistory,
+    };
+  },
 };

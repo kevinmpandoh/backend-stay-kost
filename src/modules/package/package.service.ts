@@ -1,9 +1,13 @@
 import { packageRepository } from "./package.repository";
 
 class PackageService {
-  async getActivePackages() {
+  async getAll() {
+    return packageRepository.findAll();
+  }
+  async getAvailablePackages() {
     return packageRepository.findAll({
       isActive: true,
+      type: { $ne: "free" },
     });
   }
 

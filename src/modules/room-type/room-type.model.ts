@@ -12,13 +12,14 @@ export interface IRoomType extends Document {
   facilities: Types.ObjectId[]; // fasilitas khusus untuk tipe kamar ini
   photos: Types.ObjectId[]; // foto khusus tipe kamar
   rooms?: Types.ObjectId[]; // foto khusus tipe kamar
+  reviews?: Types.ObjectId[];
 }
 
 const roomTypeSchema = new Schema<IRoomType>(
   {
     kost: { type: Schema.Types.ObjectId, ref: "Kost" },
     name: { type: String, required: true },
-    price: { type: Number, required: true },
+    price: { type: Number },
     size: { type: String, required: true }, // ukuran kamar, misal: "3x4 meter"
     status: {
       type: String,
@@ -31,6 +32,7 @@ const roomTypeSchema = new Schema<IRoomType>(
     },
     facilities: [{ type: Schema.Types.ObjectId, ref: "Facility" }],
     photos: [{ type: Schema.Types.ObjectId, ref: "PhotoRoom" }],
+    reviews: [{ type: Schema.Types.ObjectId, ref: "Review" }],
     rooms: [{ type: Schema.Types.ObjectId, ref: "Room" }],
   },
   { timestamps: true }

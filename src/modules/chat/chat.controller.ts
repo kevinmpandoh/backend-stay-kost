@@ -4,9 +4,14 @@ import { chatService } from "./chat.service";
 export const chatController = {
   startChat: async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const tenantId = req.user.id;
-      const { roomTypeId } = req.body;
-      const chatRoom = await chatService.startChat(tenantId, roomTypeId);
+      const userId = req.user.id;
+      const { roomTypeId, tenantId } = req.body;
+
+      const chatRoom = await chatService.startChat({
+        userId,
+        roomTypeId,
+        tenantId,
+      });
       res.status(200).json({ status: "success", data: chatRoom });
     } catch (error) {
       next(error);
@@ -46,6 +51,22 @@ export const chatController = {
     try {
       const user = req.user;
       const messages = await chatService.getChatList(user);
+
+      res.status(200).json({ status: "success", data: messages });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  getChatOwner: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const ownerId = req.user.id;
+      const { roomTypeId, tenantId } = req.params;
+      const messages = await chatService.getChatOwner(
+        ownerId,
+        roomTypeId,
+        tenantId
+      );
 
       res.status(200).json({ status: "success", data: messages });
     } catch (error) {

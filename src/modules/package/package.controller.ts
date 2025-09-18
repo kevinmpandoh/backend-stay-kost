@@ -2,8 +2,12 @@ import { Request, Response } from "express";
 import PackageService from "./package.service";
 
 class PackageController {
-  async getActivePackages(req: Request, res: Response) {
-    const packages = await PackageService.getActivePackages();
+  async getAll(req: Request, res: Response) {
+    const packages = await PackageService.getAll();
+    res.json({ data: packages });
+  }
+  async getAvailablePackages(req: Request, res: Response) {
+    const packages = await PackageService.getAvailablePackages();
     res.json({ data: packages });
   }
 

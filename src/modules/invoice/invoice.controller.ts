@@ -17,6 +17,30 @@ export const invoiceController = {
       next(error);
     }
   },
+
+  async getOwnerInvoices(req: Request, res: Response, next: NextFunction) {
+    try {
+      const billings = await invoiceService.getOwnerInvoices(req);
+      res.status(200).json({ status: "success", data: billings });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async getAdminInvoices(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { status, search, month } = req.query;
+
+      const invoices = await invoiceService.getAdminInvoices({
+        status,
+        search,
+        month,
+      });
+      res.status(200).json({ status: "success", data: invoices });
+    } catch (error) {
+      next(error);
+    }
+  },
   async createPayment(req: Request, res: Response, next: NextFunction) {
     try {
       const userId = req.user.id;

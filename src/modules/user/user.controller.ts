@@ -18,11 +18,7 @@ const updateProfile = async (
   next: NextFunction
 ) => {
   try {
-    const data = await userService.updateProfile(
-      req.user.id,
-      req.user.role,
-      req.body
-    );
+    const data = await userService.updateProfile(req.user.id, req.body);
     res.json(data);
   } catch (err) {
     next(err);

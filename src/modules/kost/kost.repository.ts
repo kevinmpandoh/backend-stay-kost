@@ -90,7 +90,7 @@ export class KostRepository extends BaseRepository<IKost> {
           distanceField: "distance",
           spherical: true,
           maxDistance: campusMatch.radius,
-          key: "location",
+          key: "address.coordinates", // ✅ sesuai index
         },
       });
     }
@@ -127,7 +127,7 @@ export class KostRepository extends BaseRepository<IKost> {
     if (kostType && kostType.length > 0) {
       pipeline.push({
         $match: {
-          kostType: { $in: kostType },
+          type: { $in: kostType },
         },
       });
     }
@@ -221,10 +221,12 @@ export class KostRepository extends BaseRepository<IKost> {
       pipeline.push({
         $match: {
           $or: [
-            { nama_kost: { $regex: search, $options: "i" } },
+            { name: { $regex: search, $options: "i" } },
             { "roomTypes.name": { $regex: search, $options: "i" } },
-            { "kost.address.district": { $regex: search, $options: "i" } },
-            { "kost.address.city": { $regex: search, $options: "i" } },
+            { "address.district": { $regex: search, $options: "i" } },
+            { "address.city": { $regex: search, $options: "i" } },
+            { "address.province": { $regex: search, $options: "i" } },
+            { "address.detail": { $regex: search, $options: "i" } },
           ],
         },
       });
@@ -318,6 +320,14 @@ export class KostRepository extends BaseRepository<IKost> {
           as: "roomTypes.facilities",
         },
       },
+      {
+        $lookup: {
+          from: "rooms",
+          localField: "roomTypes.rooms",
+          foreignField: "_id",
+          as: "rooms",
+        },
+      },
 
       // Join foto kost dan kamar (opsional)
       {
@@ -346,8 +356,8 @@ export class KostRepository extends BaseRepository<IKost> {
             $concat: ["$name", " ", "$roomTypes.name"],
           },
           type: 1,
-          price: "$roomTypes.harga",
-          fasilitas: "$roomTypes.fasilitas.nama_fasilitas",
+          price: "$roomTypes.price",
+          facilities: "$roomTypes.facilities.name",
           photos: {
             $cond: {
               if: { $gt: [{ $size: "$roomTypes.photos" }, 0] },
@@ -355,17 +365,9 @@ export class KostRepository extends BaseRepository<IKost> {
               else: "$photos.url",
             },
           },
-          roomAvailable: {
-            $size: {
-              $filter: {
-                input: "$roomTypes.rooms",
-                as: "room",
-                cond: { $eq: ["$$room.status", RoomStatus.AVAILABLE] },
-              },
-            },
-          },
+          rooms: "$rooms",
           rating: 1,
-          alamat: {
+          address: {
             $concat: ["$address.district", ", ", "$address.city"],
           },
         },

@@ -27,6 +27,12 @@ export interface CreateBookingPayload {
   idDocument?: string;
 }
 
+export interface UpdateBookingPayload {
+  duration: number;
+  startDate: Date;
+  endDate: Date;
+}
+
 interface CheckInPayload {
   bookingId: string;
   tenantId: string;

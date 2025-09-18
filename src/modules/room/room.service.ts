@@ -1,12 +1,27 @@
 import { ResponseError } from "@/utils/response-error.utils";
 import { roomRepository } from "./room.repository";
+import { roomTypeRepository } from "../room-type/room-type.repository";
 
 const getAll = async () => {
   return await roomRepository.findAll();
 };
 
-const createRoom = async (payload: any) => {
-  return await roomRepository.create(payload);
+const createRoom = async ({
+  roomTypeId,
+  payload,
+}: {
+  roomTypeId: string;
+  payload: any;
+}) => {
+  const newRoom = await roomRepository.create({
+    ...payload,
+    roomType: roomTypeId,
+  });
+  await roomTypeRepository.updateById(roomTypeId, {
+    $push: {
+      rooms: newRoom._id,
+    },
+  });
 };
 
 const getRooms = async (roomTypeId: string, status: any) => {

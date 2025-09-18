@@ -41,7 +41,7 @@ export class ChatRepository extends BaseRepository<IChat> {
     return await Chat.find(filter)
       .populate([
         {
-          path: "tipe_kost",
+          path: "roomType",
           select: "name",
           populate: [
             {
@@ -63,7 +63,7 @@ export class ChatRepository extends BaseRepository<IChat> {
           select: "name",
         },
       ])
-      .sort({ last_message_at: -1 });
+      .sort({ lastMessageAt: -1 });
   }
 
   async findMessagesByChatRoom(chatRoomId: string) {

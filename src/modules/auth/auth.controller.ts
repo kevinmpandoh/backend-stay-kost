@@ -67,6 +67,29 @@ export async function login(req: Request, res: Response, next: NextFunction) {
     next(e);
   }
 }
+export async function loginAdmin(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const result = await service.loginAdmin(req.body);
+    setAuthCookies(res, result.accessToken, result.refreshToken);
+    res.json({
+      accessToken: result.accessToken,
+      refreshToken: result.refreshToken,
+      user: {
+        id: result.user._id,
+        name: result.user.name,
+        email: result.user.email,
+        avatarUrl: result.user.avatarUrl,
+        role: result.user.role,
+      },
+    });
+  } catch (e) {
+    next(e);
+  }
+}
 
 export const googleCallbackRedirect = [
   passport.authenticate("google", {
@@ -103,7 +126,7 @@ export async function refreshToken(
 ) {
   try {
     const { refreshToken } = req.cookies;
-    console.log(refreshToken, req.cookies, "RESFRESH");
+
     const tokens = await service.refresh(refreshToken);
     setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
     res.json(tokens);

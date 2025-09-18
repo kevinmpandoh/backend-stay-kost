@@ -32,9 +32,14 @@ export class BaseRepository<T> {
 
   async findOne(
     filter: FilterQuery<T>,
-    populateOptions?: PopulateOptions[]
+    populateOptions?: PopulateOptions[],
+    options?: { sort?: Record<string, 1 | -1> }
   ): Promise<T | null> {
-    const query = this.model.findOne(filter);
+    let query = this.model.findOne(filter);
+
+    if (options?.sort) {
+      query = query.sort(options.sort);
+    }
     if (populateOptions) {
       populateOptions.forEach((opt) => query.populate(opt));
     }
@@ -43,10 +48,11 @@ export class BaseRepository<T> {
 
   async findAll(
     filter: FilterQuery<T> = {},
-    options?: { skip?: number; limit?: number },
+    options?: { skip?: number; limit?: number; sort?: Record<string, 1 | -1> },
     populateOptions?: PopulateOptions[]
   ): Promise<T[]> {
-    const query = this.model.find(filter).sort({ updatedAt: -1 });
+    const sortOption = options?.sort ?? { updatedAt: -1 };
+    const query = this.model.find(filter).sort(sortOption);
 
     if (options?.skip !== undefined) query.skip(options.skip);
     if (options?.limit !== undefined) query.limit(options.limit);

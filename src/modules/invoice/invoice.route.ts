@@ -6,8 +6,10 @@ import { validate } from "@/middlewares/validate.middleware";
 import { createPaymentSchema } from "./invoice.type";
 
 const router = express.Router();
-router.use(auth, role(["tenant", "owner"]));
+router.use(auth);
 
+router.get("/owner", role(["owner"]), invoiceController.getOwnerInvoices);
+router.get("/admin", role(["admin"]), invoiceController.getAdminInvoices);
 router.get("/:invoiceNumber", invoiceController.getInvoice);
 router.post(
   "/:invoiceNumber/payment",

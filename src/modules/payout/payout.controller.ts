@@ -80,7 +80,7 @@ export const PayoutController = {
       const result = await payoutService.sendPayout(payoutId);
       res.status(200).json({
         status: "success",
-        message: "Payout berhasil disetujui",
+        message: "Payout berhasil dikirim",
         data: result,
       });
     } catch (error: any) {

@@ -8,6 +8,6 @@ const router = express.Router();
 router.use(auth);
 
 router.get("/owner", role(["owner"]), DashboardController.getOwnerDashboard);
-router.get("/admin", DashboardController.getAdminDashboard);
+router.get("/admin", role(["admin"]), DashboardController.getAdminDashboard);
 
 export default router;

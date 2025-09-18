@@ -8,7 +8,12 @@ router.use(auth);
 
 router.get("/", chatController.getChatRooms);
 
-router.post("/start", role(["tenant"]), chatController.startChat);
+router.post("/start", role(["tenant", "owner"]), chatController.startChat);
+router.get(
+  "/owner/:roomTypeId/:tenantId",
+  role(["owner"]),
+  chatController.getChatOwner
+);
 router.get("/:chatRoomId", chatController.getChatMessages);
 router.post("/:chatRoomId/send", chatController.sendMessage);
 

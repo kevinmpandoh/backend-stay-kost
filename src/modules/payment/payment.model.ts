@@ -6,6 +6,8 @@ export enum PaymentStatus {
   PENDING = "pending",
   SUCCESS = "success",
   FAILED = "failed",
+  CANCELLED = "cancelled",
+  EXPIRED = "expired",
 }
 
 export interface IPayment extends Document {
@@ -45,7 +47,7 @@ const PaymentSchema = new Schema<IPayment>(
     provider: { type: String, required: true }, // contoh: "midtrans", "manual", "bca_va", "gopay", dsb
     method: {
       type: String,
-      enum: ["bank_transfer", "ewallet", "credit_card", "offline"],
+      enum: ["bank_transfer", "echannel", "ewallet", "credit_card", "offline"],
       required: true,
     },
     channel: { type: String },

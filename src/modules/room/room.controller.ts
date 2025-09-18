@@ -23,7 +23,11 @@ export const RoomController = {
   },
   async createRoom(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await roomService.createRoom(req.body);
+      const { roomTypeId } = req.params;
+      const result = await roomService.createRoom({
+        roomTypeId,
+        payload: req.body,
+      });
       res
         .status(200)
         .json({ message: "Fasilitas Kost berhasil dibuat", data: result });

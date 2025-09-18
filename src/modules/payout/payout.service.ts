@@ -14,7 +14,12 @@ import { env } from "@/config/env";
 import { notificationService } from "../notification/notification.service";
 
 const getAllPayout = async () => {
-  return await payoutRepository.findAll();
+  return await payoutRepository.findAll({}, {}, [
+    {
+      path: "owner",
+      select: "name avatarUrl email phone",
+    },
+  ]);
 };
 
 const getAllBeneficiaries = async () => {
@@ -31,7 +36,17 @@ const updateBeneficiaries = async (aliasName: string, payload: any) => {
   });
 };
 
-const createPayout = async (invoice: IInvoice, owner: IUser) => {
+const createPayout = async ({
+  invoice,
+  ownerId,
+}: {
+  invoice: IInvoice;
+  ownerId: string;
+}) => {
+  const owner = await userRepository.findById(ownerId);
+
+  if (!owner) throw new ResponseError(404, "Owner tidak ditemukan");
+
   const amount = invoice.amount;
   const fee = Math.floor(amount * 0.05); // contoh 5% fee
   const netAmount = amount - fee;
@@ -47,13 +62,28 @@ const createPayout = async (invoice: IInvoice, owner: IUser) => {
     provider: "midtrans",
   };
 
-  if (!owner.bank) {
-    await payoutRepository.create({
+  if (
+    !owner.bank?.accountNumber ||
+    !owner.bank?.bankCode ||
+    !owner.bank?.accountName ||
+    !owner.bank?.aliasName
+  ) {
+    const newPayout = await payoutRepository.create({
       ...payoutData,
       status: PayoutStatus.PENDING,
-
-      note: "Owner bank account not set",
+      visibleFailedReason:
+        "Rekening bank belum lengkap. Silahkan lengkapi rekening bank agar pembayaran bisa diproses.",
+      note: "Pembayaran Kost",
     });
+
+    await notificationService.sendNotification(
+      newPayout.owner.toString(),
+      "owner",
+      "payout",
+      `Pembayaran Kost berjumlah Rp${newPayout.amount.toLocaleString()} GAGAL di transfer ke rekening anda karena Rekening Bank belum lengkap. Silahkan lengkap data rekeningnya`,
+      "Payoout Failed",
+      { payoutId: newPayout.invoice }
+    );
   } else {
     // kirim ke payment gateway (contoh Midtrans Disbursement API)
     try {
@@ -70,14 +100,11 @@ const createPayout = async (invoice: IInvoice, owner: IUser) => {
       });
 
       const payoutRes = response.payouts?.[0];
-      console.log(payoutRes, "RES Create");
 
       // Approve otomatis
       const res = await payoutApproval.approvePayouts({
         reference_nos: [payoutRes.reference_no],
       });
-
-      console.log(res, "RES APPROVE");
 
       await payoutRepository.create({
         ...payoutData,
@@ -87,22 +114,15 @@ const createPayout = async (invoice: IInvoice, owner: IUser) => {
         accountName: owner.bank.accountName,
         accountNumber: owner.bank.accountNumber,
         externalId: payoutRes.reference_no,
+        note: "Pembayaran Kost",
         requestedAt: new Date(),
       });
     } catch (err: any) {
-      console.log(err.ApiResponse, "INI ERORNYA GES");
-
       throw new ResponseError(
         400,
         err.ApiResponse.error_message,
         err.ApiResponse.errors
       );
-      // kalau gagal kirim, simpan status pending
-      // await payoutRepository.create({
-      //   ...payoutData,
-      //   status: PayoutStatus.FAILED,
-      //   failedReason: "Disbursement failed",
-      // });
     }
   }
 };
@@ -154,39 +174,74 @@ const approvePayout = async (payoutId: string) => {
 
 const sendPayout = async (payoutId: string) => {
   // Cek payout di database
-  const payout = (await payoutRepository.findById(payoutId)) as any;
+  const payout = (await payoutRepository.findById(payoutId, [
+    { path: "owner" },
+  ])) as any;
   if (!payout) throw new ResponseError(404, "Payout tidak ditemukan.");
 
-  if (payout.status !== "pending")
+  if ([PayoutStatus.SUCCESS, PayoutStatus.PROCESSED].includes(payout.status)) {
     throw new ResponseError(400, "Payout sudah diproses.");
+  }
 
-  if (!payout.midtrans_payout_id) {
-    if (!payout.owner.rekening_bank.nomor_rekening)
-      throw new ResponseError(400, "Rekening bank belum lengkap");
+  const owner = payout.owner;
+
+  if (
+    !owner.bank.accountName ||
+    !owner.bank.accountNumber ||
+    !owner.bank.bankCode
+  )
+    throw new ResponseError(400, "Rekening bank belum lengkap");
+
+  try {
+    // Data payout yang dikirim ke Midtrans
     const payoutData = {
-      amount: payout.jumlah,
-      beneficiary_name: payout.owner.rekening_bank?.nama_pemilik,
-      beneficiary_account: payout.owner.rekening_bank?.nomor_rekening,
-      beneficiary_bank: payout.owner.rekening_bank?.nama_bank,
-      notes: `Pembayaran kost`,
+      amount: 1,
+      beneficiary_name: owner.bank.accountName,
+      beneficiary_account: owner.bank.accountNumber,
+      beneficiary_bank: owner.bank.bankCode,
+      notes: `Pembayaran kost `,
     };
 
+    // 1. Buat payout baru ke Midtrans
     const response = await payoutCreator.createPayouts({
       payouts: [payoutData],
     });
 
-    if (response.payouts[0].status === "queued") {
-      await payoutRepository.updateById(payout._id, {
-        midtrans_payout_id: response.payouts[0].reference_no,
-        reason: null,
-      });
+    const payoutRes = response.payouts?.[0];
+    if (!payoutRes)
+      throw new ResponseError(400, "Midtrans tidak mengembalikan data payout");
 
-      const midtransResponse = await payoutApproval.approvePayouts({
-        reference_nos: [response.payouts[0].reference_no],
-      });
+    // 2. Approve payout
+    const tes = await payoutApproval.approvePayouts({
+      reference_nos: [payoutRes.reference_no],
+    });
 
-      return midtransResponse;
-    }
+    // 3. Update di database
+    await payoutRepository.updateById(payout._id, {
+      accountName: owner.bank.accountName,
+      accountNumber: owner.bank.accountNumber,
+      status: PayoutStatus.PROCESSED, // sementara, tunggu callback Midtrans
+      method: "bank_transfer",
+      provider: "midtrans",
+      channel: owner.bank.bankCode,
+      externalId: payoutRes.reference_no, // jangan ditimpa lagi
+      failedReason: null,
+      isInternalError: false,
+      visibleFailedReason: null,
+    });
+
+    return { success: true, referenceNo: payoutRes.reference_no };
+  } catch (err: any) {
+    // Simpan alasan gagal supaya admin bisa lihat
+    await payoutRepository.updateById(payoutId, {
+      status: PayoutStatus.FAILED,
+      failedReason: err.ApiResponse?.error_message || err.message,
+    });
+    throw new ResponseError(
+      400,
+      "Gagal mengirim payout",
+      err.ApiResponse || err
+    );
   }
 };
 
@@ -247,7 +302,6 @@ const createAutoPayout = async ({
   });
 
   const payoutRes = response.payouts?.[0];
-  console.log(payoutRes, "RES Create");
   if (!payoutRes || payoutRes.status !== "queued") {
     await payoutRepository.create({
       owner: owner._id,
@@ -264,8 +318,6 @@ const createAutoPayout = async ({
   const res = await payoutApproval.approvePayouts({
     reference_nos: [payoutRes.reference_no],
   });
-
-  console.log(res, "RES APPROVE");
 
   await payoutRepository.create({
     payoutNumber: "PO-202508-0001",
@@ -317,6 +369,8 @@ const processPayoutNotification = async ({
   } else if (status === "completed") {
     payout.status = PayoutStatus.SUCCESS;
     payout.transferredAt = new Date();
+    payout.visibleFailedReason = "";
+    (payout.isInternalError = false), (payout.failedReason = "");
     payout.updatedAt = updated_at;
     payout.save();
 
@@ -338,6 +392,7 @@ const processPayoutNotification = async ({
     // Kalau internal → tetap pending di UI owner
     if (mapped.isInternalError) {
       payout.status = PayoutStatus.PENDING;
+      payout.visibleFailedReason = mapped.ownerMessage; // optional field buat owner
     } else {
       payout.status = PayoutStatus.FAILED;
       payout.visibleFailedReason = mapped.ownerMessage; // optional field buat owner
@@ -352,6 +407,7 @@ const processPayoutNotification = async ({
         { payotuId: payout.invoice }
       );
     }
+    payout.save();
   }
   return payout;
 };

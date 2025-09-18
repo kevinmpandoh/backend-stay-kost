@@ -24,10 +24,10 @@ export const kostFilterSchema = Joi.object({
   minPrice: Joi.number().min(0).optional(),
   maxPrice: Joi.number().min(0).optional(),
 
-  kostType: Joi.array().items(Joi.string()).optional(),
-  kostFacilities: Joi.array().items(Joi.string()).optional(), // comma-separated object IDs
-  roomFacilities: Joi.array().items(Joi.string()).optional(), // comma-separated object IDs
-  rules: Joi.array().items(Joi.string()).optional(), // comma-separated rule names
+  kostType: Joi.string().optional(),
+  kostFacilities: Joi.string().optional(), // comma-separated object IDs
+  roomFacilities: Joi.string().optional(), // comma-separated object IDs
+  rules: Joi.string().optional(), // comma-separated rule names
 
   sort: Joi.string()
     .valid("price_asc", "price_desc", "rating_high", "recommended")

@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import { BookingService } from "./booking.service";
-import { CreateBookingPayload } from "./booking.types";
+import { CreateBookingPayload, UpdateBookingPayload } from "./booking.types";
 
 export const bookingController = {
   async getActiveBookings(req: Request, res: Response, next: NextFunction) {
@@ -28,6 +28,38 @@ export const bookingController = {
       res
         .status(201)
         .json({ message: "Booking berhasil dibuat", data: result });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async updateBooking(req: Request, res: Response, next: NextFunction) {
+    try {
+      const payload = {
+        startDate: req.body.startDate, // ISO date
+      } as UpdateBookingPayload;
+
+      const { bookingId } = req.params;
+      // const tenantId = req.user.id;
+      const result = await BookingService.update(payload, bookingId);
+      res
+        .status(201)
+        .json({ message: "Booking berhasil dibuat", data: result });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async getAllBookingAdmin(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { page, limit, search, status } = req.query;
+      const result = await BookingService.getAllBookingsAdmin({
+        page: parseInt(page as string) || 1,
+        limit: parseInt(limit as string) || 10,
+        search: search as string,
+        status: status as string,
+      });
+      res.status(200).json({ status: "success", ...result });
     } catch (error) {
       next(error);
     }
@@ -94,11 +126,11 @@ export const bookingController = {
       next(error);
     }
   },
-  async getDetailBookingOwner(req: Request, res: Response, next: NextFunction) {
+  async getDetailBooking(req: Request, res: Response, next: NextFunction) {
     try {
       const { bookingId } = req.params;
-      const bookings = await BookingService.getDetailBookingOwner(bookingId);
-      res.status(200).json({ status: "success", data: bookings });
+      const bookings = await BookingService.getDetailBooking(bookingId);
+      res.status(200).json(bookings);
     } catch (error) {
       next(error);
     }

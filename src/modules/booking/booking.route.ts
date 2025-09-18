@@ -7,6 +7,7 @@ import {
   createBookingSchema,
   rejectBookingSchema,
   stopRentRequestSchema,
+  updateBookingSchema,
 } from "./booking.validation";
 import { ReviewController } from "../review/review.controller";
 import { createReviewSchema } from "../review/review.validation";
@@ -27,7 +28,7 @@ router.get(
   role(["tenant"]),
   bookingController.getBookingHistoryTenant
 );
-
+router.get("/admin", bookingController.getAllBookingAdmin);
 router.get("/owner", role(["owner"]), bookingController.getAllBookingOwner);
 router.get(
   "/owner/active",
@@ -107,8 +108,18 @@ router.post(
 );
 
 // admin
-router.get("/", bookingController.getActiveBookings);
 
-router.get("/:bookingId", bookingController.getDetailBookingOwner);
+router.get(
+  "/:bookingId",
+  role(["owner", "admin", "tenant"]),
+  bookingController.getDetailBooking
+);
+
+router.patch(
+  "/:bookingId",
+  role(["admin"]),
+  validate(updateBookingSchema),
+  bookingController.updateBooking
+);
 
 export default router;

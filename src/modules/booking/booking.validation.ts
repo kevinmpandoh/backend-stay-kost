@@ -4,7 +4,11 @@ export const createBookingSchema = Joi.object({
   roomType: Joi.string().hex().length(24).required(),
   startDate: Joi.date().iso().required(),
   duration: Joi.number().integer().min(1).required(),
-  note: Joi.string().optional(),
+  note: Joi.string().optional().allow(""),
+});
+
+export const updateBookingSchema = Joi.object({
+  startDate: Joi.date().iso().optional(),
 });
 
 export const approveBookingSchema = Joi.object({

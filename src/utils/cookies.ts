@@ -6,7 +6,6 @@ export function setAuthCookies(
   accessToken: string,
   refreshToken: string
 ) {
-  console.log(env.COOKIE_DOMAIN, env.COOKIE_SECURE, "TESCOK");
   const common = {
     httpOnly: true as const,
     // secure: true,

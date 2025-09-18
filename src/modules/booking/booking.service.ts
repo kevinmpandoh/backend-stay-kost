@@ -15,6 +15,7 @@ import {
   BookingStatus,
   CreateBookingPayload,
   StopRequestStatus,
+  UpdateBookingPayload,
 } from "./booking.types";
 
 import { FilterQuery, PopulateOptions } from "mongoose";
@@ -24,7 +25,7 @@ import { RoomStatus } from "../room/room.type";
 import { bookingRepository } from "./booking.repository";
 import payoutService from "../payout/payout.service";
 import { userRepository } from "../user/user.repository";
-import { IBooking } from "./booking.model";
+import { Booking, IBooking } from "./booking.model";
 import { generateInvoiceCode } from "@/utils/generateInvoiceCode";
 import { invoiceRepository } from "../invoice/invoice.repository";
 import { agenda } from "@/config/agenda";
@@ -73,6 +74,19 @@ export const BookingService = {
       );
     }
 
+    //  cek apakah sudah ada kost yang check in, aktif atau check out jika ada tidak bisa
+    // Cek apakah sudah ada booking di kost yang statusnya ACTIVE, WAITING_FOR_CHECKIN, atau WAITING_FOR_CHECKOUT
+    const alreadyBooked = existing.find((b: IBooking) =>
+      [
+        BookingStatus.ACTIVE,
+        BookingStatus.WAITING_FOR_CHECKIN,
+        BookingStatus.WAITING_FOR_CHECKOUT,
+      ].includes(b.status)
+    );
+    if (alreadyBooked) {
+      throw new ResponseError(400, "You already have an active booking ");
+    }
+
     const availableRooms = roomType.rooms?.filter(
       (room: any) => room.status === RoomStatus.AVAILABLE
     );
@@ -86,7 +100,7 @@ export const BookingService = {
       .add(payload.duration, "month")
       .toDate();
 
-    const totalPrice = roomType.price + 10000; // TODO: extract ke fungsi hitungHargaBooking
+    const totalPrice = roomType.price;
 
     const booking = await bookingRepository.create({
       ...payload,
@@ -95,8 +109,7 @@ export const BookingService = {
       owner: roomType.kost.owner,
       endDate,
       totalPrice,
-      // confirmDueDate,
-      confirmDueDate: dayjs().add(1, "minute").toDate(), // ⏳ TEST: 1 menit
+      confirmDueDate: dayjs().add(3, "days").toDate(), // ⏳ TEST: 1 menit
     });
 
     await notificationService.sendNotification(
@@ -112,6 +125,19 @@ export const BookingService = {
     await agenda.schedule("in 3 days", "expire-booking-confirm", {
       bookingId: booking._id.toString(),
     });
+
+    return booking;
+  },
+  async update(payload: UpdateBookingPayload, bookingId: string) {
+    const booking = await bookingRepository.findById(bookingId);
+
+    if (!booking) {
+      throw new ResponseError(404, "Booking not found");
+    }
+
+    console.log(payload, bookingId);
+
+    await bookingRepository.updateById(bookingId, payload);
 
     return booking;
   },
@@ -218,7 +244,7 @@ export const BookingService = {
       "tenant",
       "booking",
       `Pengajuan sewa untuk kost ${booking.kost.name} - ${booking.roomType.name} ditolak oleh pemilik kost`,
-      "Booking Approved",
+      "Booking Ditolak",
       { bookingId: booking._id }
     );
   },
@@ -266,7 +292,10 @@ export const BookingService = {
       checkInAt: new Date(),
     });
 
-    await payoutService.createPayout(invoice, owner);
+    await payoutService.createPayout({
+      invoice,
+      ownerId: booking.owner.toString(),
+    });
 
     return booking;
   },
@@ -453,54 +482,152 @@ export const BookingService = {
     );
   },
 
-  async getAllBookingsAdmin(options: any = {}) {
-    const { page = 1, limit = 10, search = "" } = options;
+  async getAllBookingsAdmin({
+    status,
+    page,
+    limit,
+    search,
+  }: {
+    status: string;
+    limit: number;
+    page: number;
+    search: string;
+  }) {
+    const statusMap: Record<string, BookingStatus> = {
+      pending: BookingStatus.PENDING,
+      waiting_for_payment: BookingStatus.WAITING_FOR_PAYMENT,
+      waiting_for_checkin: BookingStatus.WAITING_FOR_CHECKIN,
+      completed: BookingStatus.COMPLETED,
+      rejected: BookingStatus.REJECTED,
+      cancelled: BookingStatus.CANCELLED,
+      expired: BookingStatus.EXPIRED,
+    };
 
-    const skip = (page - 1) * limit;
-
-    const query: FilterQuery<IBooking> = {};
-
-    // Hitung total
-    const total = await bookingRepository.count(query);
-
-    const populate: PopulateOptions[] = [
-      {
-        path: "roomType",
-        select: "name",
-        populate: [
-          {
-            path: "kost",
-            select: "name type address",
-            populate: { path: "address" },
-          },
-          { path: "photos", select: "url" },
+    // Filter status
+    let statusFilter: any = {};
+    if (statusMap[status]) {
+      statusFilter = statusMap[status];
+    } else {
+      statusFilter = {
+        $in: [
+          BookingStatus.PENDING,
+          BookingStatus.WAITING_FOR_PAYMENT,
+          BookingStatus.WAITING_FOR_CHECKIN,
+          BookingStatus.COMPLETED,
+          BookingStatus.REJECTED,
+          BookingStatus.EXPIRED,
         ],
+      };
+    }
+
+    const matchStage: any = { status: statusFilter };
+
+    // Pipeline dasar
+    const pipeline: any[] = [
+      { $match: matchStage },
+
+      // Join tenant
+      {
+        $lookup: {
+          from: "users",
+          localField: "tenant",
+          foreignField: "_id",
+          as: "tenant",
+        },
       },
-      { path: "tenant", select: "name foto_profile" },
+      { $unwind: "$tenant" },
+
+      // Join roomType
+      {
+        $lookup: {
+          from: "roomtypes",
+          localField: "roomType",
+          foreignField: "_id",
+          as: "roomType",
+        },
+      },
+      { $unwind: "$roomType" },
+
+      // Join kost
+      {
+        $lookup: {
+          from: "kosts",
+          localField: "kost",
+          foreignField: "_id",
+          as: "kost",
+        },
+      },
+      { $unwind: "$kost" },
+
+      // Join Foto Kamar
+      {
+        $lookup: {
+          from: "photorooms",
+          localField: "roomType.photos",
+          foreignField: "_id",
+          as: "photoRoom",
+        },
+      },
     ];
 
-    // Ambil data review dengan populate dan pagination
-    const bookings = await bookingRepository.findAll(
-      query,
-      {
-        skip,
-        limit,
-      },
-      populate
-    );
+    // Tambahin search kalau ada
+    if (search) {
+      pipeline.push({
+        $match: {
+          $or: [
+            { "tenant.name": { $regex: search, $options: "i" } },
+            { "kost.name": { $regex: search, $options: "i" } },
+            { "roomType.name": { $regex: search, $options: "i" } },
+          ],
+        },
+      });
+    }
 
-    const totalPages = Math.ceil(total / limit);
+    // Hitung total data dulu
+    const countPipeline = [...pipeline, { $count: "total" }];
+    const countResult = await Booking.aggregate(countPipeline);
+    const total = countResult.length > 0 ? countResult[0].total : 0;
+
+    // Pagination
+    const skip = (page - 1) * limit;
+    pipeline.push({ $sort: { dueDate: 1 } });
+    pipeline.push({ $skip: skip });
+    pipeline.push({ $limit: limit });
+
+    const bookings = await Booking.aggregate(pipeline);
+
+    // Format hasil
+    const formatted = bookings.map((booking: any) => ({
+      id: booking._id,
+      kost: {
+        kostId: booking.kost._id,
+        roomTypeId: booking.roomType._id,
+        photo: booking.roomType?.photos[0]?.url || null,
+        name: `${booking.kost?.name} - ${booking.roomType?.name}`,
+        type: booking.kost?.type,
+        address: `${booking.address?.city}, ${booking.address?.district}`,
+      },
+      tenant: {
+        id: booking.tenant._id,
+        name: booking.tenant.name,
+        foto_profile: booking.tenant.avatarUrl,
+      },
+      startDate: dayjs(booking.startDate).format("YYYY-MM-DD"),
+      requestBookingAt: dayjs(booking.createdAt).format("D MMMM YYYY"),
+      endDate: dayjs(booking.endDate).format("YYYY-MM-DD"),
+      duration: booking.duration,
+      status: booking.status,
+      totalPrice: booking.totalPrice,
+    }));
 
     return {
+      data: formatted,
       pagination: {
         total,
         page,
         limit,
-        totalPages,
-        hasNextPage: page < totalPages,
-        hasPrevPage: page > 1,
+        totalPages: Math.ceil(total / limit),
       },
-      data: bookings,
     };
   },
 
@@ -537,9 +664,9 @@ export const BookingService = {
 
         let invoiceUnpaid: string | null = null;
         if (booking.status === BookingStatus.WAITING_FOR_PAYMENT) {
-          let invoice = await invoiceRepository.findOne({
-            booking: booking._id,
-          });
+          let invoice = await invoiceRepository.findFirstUnpaidByBooking(
+            booking._id
+          );
           invoiceUnpaid = invoice?.invoiceNumber || null;
         }
         return {
@@ -570,12 +697,12 @@ export const BookingService = {
     // Mapping nama status dari frontend ke backend
     const statusMap: Record<string, BookingStatus> = {
       pending: BookingStatus.PENDING,
-      menunggu_pembayaran: BookingStatus.WAITING_FOR_PAYMENT,
-      menunggu_checkin: BookingStatus.WAITING_FOR_CHECKIN,
-      berakhir: BookingStatus.COMPLETED,
-      ditolak: BookingStatus.REJECTED,
-      dibatalkan: BookingStatus.EXPIRED,
-      kadaluarsa: BookingStatus.EXPIRED,
+      waiting_for_payment: BookingStatus.WAITING_FOR_PAYMENT,
+      waiting_for_checkin: BookingStatus.WAITING_FOR_CHECKIN,
+      completed: BookingStatus.COMPLETED,
+      rejected: BookingStatus.REJECTED,
+      canclelled: BookingStatus.CANCELLED,
+      expired: BookingStatus.EXPIRED,
     };
 
     let statusFilter: any = {};
@@ -640,8 +767,8 @@ export const BookingService = {
 
         tanggalMasuk: dayjs(booking.startDate).format("D MMMM YYYY"),
         tanggalDiajukan: dayjs(booking.createdAt).format("D MMMM YYYY"),
-        expireDate: booking.expires_at
-          ? dayjs(booking.expires_at).format("D MMMM YYYY HH:mm")
+        expireDate: booking.confirmDueDate
+          ? dayjs(booking.confirmDueDate).format("D MMMM YYYY HH:mm")
           : null,
         durasi: booking.duration,
         status: booking.status,
@@ -684,15 +811,16 @@ export const BookingService = {
       return {
         id: booking._id,
         roomTypeId: roomType._id,
-        fotoKamar: roomType.photos?.[0].url || null, // Ambil 1 foto saja
-        namaKost: `${kost?.name} ${roomType?.name}`,
-        jenisKost: kost?.type,
+        photo: roomType.photos?.[0].url || null, // Ambil 1 foto saja
+        kostName: `${kost?.name} ${roomType?.name}`,
+        type: kost?.type,
         address: `${kost?.address?.city}, ${kost?.address?.district}`,
-        tanggalMasuk: dayjs(booking.startDate).format("D MMMM YYYY"),
-        tanggalDiajukan: dayjs(booking.createdAt).format("D MMMM YYYY"),
-        durasi: booking.duration,
+        startDate: dayjs(booking.startDate).format("D MMMM YYYY"),
+        endDate: dayjs(booking.endDate).format("D MMMM YYYY"),
+        submittedDate: dayjs(booking.createdAt).format("D MMMM YYYY"),
+        duration: booking.duration,
         status: booking.status,
-        harga: booking.total_price,
+        price: booking.totalPrice,
       };
     });
 
@@ -709,7 +837,7 @@ export const BookingService = {
       [
         {
           path: "roomType",
-          select: "name",
+          select: "name price",
           populate: [
             {
               path: "kost",
@@ -733,9 +861,14 @@ export const BookingService = {
     )) as any;
     if (!booking) return null;
 
-    const invoices = await invoiceRepository.findAll({
-      booking: booking._id,
-    });
+    const invoices = await invoiceRepository.findAll(
+      {
+        booking: booking._id,
+      },
+      {
+        sort: { dueDate: 1 },
+      }
+    );
 
     const roomType = booking.roomType;
     const kost = roomType?.kost;
@@ -759,11 +892,11 @@ export const BookingService = {
       photo: roomType?.photos[0].url || [],
       address: `${address?.city}, ${address?.district}`,
       size: roomType?.size,
-      price: roomType?.harga,
+      price: roomType?.price,
       room: `${booking.room.number}, Lantai ${booking.room.floor}`, // atau ambil info dari roomType.rooms jika perlu detail kamar
-      stopRequest: stopRequest
+      stopRequest: stopRequest?.status
         ? {
-            status: stopRequest?.status || "Tidak Ada",
+            status: stopRequest?.status,
             stopDate:
               dayjs(stopRequest.requestedStopDate).format("D MMMM YYYY") ||
               null,
@@ -777,7 +910,26 @@ export const BookingService = {
             ulasan: review.comment,
           }
         : null,
-      invoices,
+      invoices: invoices.map((invoice) => {
+        const dueDate = dayjs(invoice.dueDate);
+        const now = dayjs();
+        const daysDiff = dueDate.diff(now, "day"); // selisih tanggal jatuh tempo dan hari ini
+
+        const isDueToday = dueDate.isSame(now, "day");
+        const isLate = now.isAfter(dueDate, "day");
+        const daysLate = isLate ? now.diff(dueDate, "day") : 0;
+        return {
+          id: invoice._id,
+          invoiceNumber: invoice.invoiceNumber,
+          amount: invoice.amount,
+          dueDate: dayjs(invoice.dueDate).format("D MMMM YYYY"),
+          status: invoice.status,
+          daysRemaining: daysDiff,
+          isDueToday: isDueToday,
+          isLate: isLate,
+          daysLate: daysLate,
+        };
+      }),
     };
   },
   async getActiveBookingsOwner(ownerId: string) {
@@ -806,28 +958,46 @@ export const BookingService = {
             { path: "photos", select: "url" },
           ],
         },
-        { path: "tenant", select: "name foto_profil" },
+        { path: "tenant" },
+        { path: "room" },
       ]
     );
 
     // Format output yang hanya diperlukan
     const formatted = bookings.map((booking: any) => {
       const roomType = booking.roomType;
+      const tenant = booking.tenant;
       const kost = roomType.kost;
+      console.log(tenant, "TENANT");
       return {
         id: booking._id,
-        tenantName: booking.tenant.name,
-        namaKost: `${kost?.name} - ${roomType?.name}`,
-        avatar: booking.tenant.foto_profil,
-        tanggalMasuk: dayjs(booking.startDate).format("D MMMM YYYY"),
-        durasi: booking.duration,
+        tenant: {
+          id: tenant._id,
+          photo: tenant.avatarUrl,
+          name: tenant.name,
+          email: tenant.email,
+          phone: tenant.phone,
+          gender:
+            tenant.tenantProfile?.gender === "male" ? "Laki-laki" : "Perempuan",
+          job: tenant.tenantProfile?.job,
+          emergencyContact: tenant.tenantProfile?.emergencyContact,
+          hometown: tenant.tenantProfile?.hometown,
+        },
+        roomTypeId: roomType._id,
+        kostName: `${kost?.name} - ${roomType?.name}`,
+        photoRoom: roomType.photos[0].url,
+        room: `${booking.room.number} ${booking.room?.floor || ""}`,
+        startDate: dayjs(booking.startDate).format("D MMMM YYYY"),
+        endDate: dayjs(booking.endDate).format("D MMMM YYYY"),
+        duration: booking.duration,
+        cost: booking.totalPrice,
         status:
           booking.status === BookingStatus.ACTIVE
             ? "Sedang Menyewa"
             : booking.status === BookingStatus.WAITING_FOR_CHECKIN
             ? "Akan Masuk"
             : booking.status,
-        berhentiSewa: booking.stopRequest
+        stopRent: booking.stopRequest
           ? {
               status: booking.stopRequest?.status,
               stopDate:
@@ -835,7 +1005,7 @@ export const BookingService = {
                 dayjs(booking.stopRequest?.requestedStopDate).format(
                   "D MMMM YYYY"
                 ),
-              reaseon: booking.stopReques?.reason,
+              reason: booking.stopReques?.reason,
             }
           : null,
       };
@@ -843,7 +1013,7 @@ export const BookingService = {
 
     return formatted;
   },
-  async getDetailBookingOwner(bookingId: string) {
+  async getDetailBooking(bookingId: string) {
     const booking = (await bookingRepository.findById(bookingId, [
       {
         path: "roomType",
@@ -852,6 +1022,10 @@ export const BookingService = {
           {
             path: "kost",
             select: "name",
+          },
+          {
+            path: "photos",
+            select: "url",
           },
         ],
       },
@@ -869,29 +1043,28 @@ export const BookingService = {
     if (!booking) throw new ResponseError(404, "Booking not found");
 
     return {
-      roomTypeId: booking.roomType._id,
-      tanggal_masuk: dayjs(booking.startDate).format("D MMMM YYYY"),
-      tanggal_selesai: dayjs(booking.endDate).format("D MMMM YYYY"),
-      durasi: booking.duration,
-      biaya_sewa: booking.totalPrice,
-      name: `${booking.roomType.kost.name} - ${booking.roomType.name}`,
-      kamar: booking.room.number,
-      status:
-        booking.status === BookingStatus.ACTIVE
-          ? "Sedang Menyewa"
-          : booking.status === BookingStatus.WAITING_FOR_CHECKIN
-          ? "Akan Masuk"
-          : booking.status,
+      startDate: dayjs(booking.startDate).format("D MMMM YYYY"),
+      endDate: dayjs(booking.endDate).format("D MMMM YYYY"),
+      duration: `${booking.duration} bulan`,
+      totalPrice: booking.totalPrice,
+      idDocument: booking.idDocument,
+      createdAt: dayjs(booking.createdAt).format("D MMMM YYYY"),
+      kost: {
+        name: `${booking.roomType.kost.name} - ${booking.roomType.name}`,
+        room: booking.room?.number,
+        roomTypeId: booking.roomType._id,
+        photo: booking.roomType.photos[0].url,
+      },
+      status: booking.status,
       tenant: {
         id: booking.tenant._id,
         name: booking.tenant.name,
         email: booking.tenant.email,
         phone: booking.tenant.phone,
-        emergency_contact: booking.tenant.kontak_darurat,
+        emergencyContact: booking.tenant.kontak_darurat,
         gender: booking.tenant.jenis_kelamin,
-        pekerjaan: booking.tenant.pekerjaan,
+        job: booking.tenant.pekerjaan,
         photo: booking.tenant.foto_profil,
-        ktp: null,
       },
     };
   },

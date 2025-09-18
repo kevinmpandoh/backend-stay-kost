@@ -39,7 +39,7 @@ export const ReviewService = {
       throw new ResponseError(403, "Ulasan sudah diberikan untuk booking ini.");
 
     // Simpan ulasan
-    await reviewRepository.create({
+    const review = await reviewRepository.create({
       tenant: tenantId,
       owner: booking.owner,
       roomType: booking.roomType,
@@ -50,6 +50,11 @@ export const ReviewService = {
 
     // Tandai booking sebagai sudah diberi ulasan
     await bookingRepository.updateById(bookingId, { reviewed: true });
+    await roomTypeRepository.updateById(booking.roomType, {
+      $push: {
+        reviews: review._id,
+      },
+    });
   },
   async replyReview(reviewId: string, payload: any) {
     const review = await reviewRepository.findById(reviewId);
@@ -91,7 +96,7 @@ export const ReviewService = {
       ];
     }
 
-    if (rating) {
+    if (rating && rating !== "all") {
       query.rating = parseInt(rating as string);
     }
 
@@ -132,6 +137,7 @@ export const ReviewService = {
         tenantName: review.tenant.name,
         roomType: review.roomType.name,
         room: review.booking.room.number,
+        createdAt: review.createdAt,
       };
     });
 
@@ -206,6 +212,7 @@ export const ReviewService = {
         tenantName: review.tenant.name,
         roomType: review.roomType.name,
         room: review.booking.room.number,
+        createdAt: review.createdAt,
       };
     });
 

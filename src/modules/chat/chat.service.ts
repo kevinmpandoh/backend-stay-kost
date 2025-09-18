@@ -5,28 +5,38 @@ import { chatRepository } from "./chat.repository";
 import { getReceiverSocketId, io } from "@/socket";
 
 export const chatService = {
-  startChat: async (tenantId: string, roomTypeId: string) => {
-    const tenant = await userRepository.findById(tenantId);
-    const roomType = (await roomTypeRepository.findById(roomTypeId, [
-      {
-        path: "kost",
-        select: "owner",
-      },
-    ])) as any;
+  startChat: async ({
+    userId, // yang memulai chat (bisa tenant atau owner)
+    roomTypeId,
+    tenantId, // kalau yang mulai owner, tenantId wajib diisi
+  }: {
+    userId: string;
+    roomTypeId: string;
+    tenantId?: string;
+  }) => {
+    const user = await userRepository.findById(userId);
+    if (!user) throw new ResponseError(404, "User tidak ditemukan");
 
-    if (!tenant)
-      throw new ResponseError(404, "Anda harus login sebagai penyewa");
-    if (!roomType) throw new ResponseError(404, "KOST Tidak ditemukan");
+    const roomType = (await roomTypeRepository.findById(roomTypeId, [
+      { path: "kost" },
+    ])) as any;
+    if (!roomType) throw new ResponseError(404, "Kost tidak ditemukan");
+    console.log(userId, tenantId, "TES");
+
+    // tenantId bisa datang dari user yang login (jika tenant) atau dari parameter (jika owner)
+    const tenant = tenantId || userId;
+    const owner = roomType.kost.owner;
 
     let chatRoom = await chatRepository.findOne({
-      tenant: tenantId,
+      tenant,
       roomType: roomTypeId,
     });
 
     if (!chatRoom) {
       chatRoom = await chatRepository.create({
-        tenant: tenantId,
-        owner: roomType.kost.owner,
+        tenant,
+        owner,
+        kost: roomType.kost._id,
         roomType: roomTypeId,
       });
     }
@@ -153,7 +163,7 @@ export const chatService = {
     const userId = user.id;
     const userRole = user.role;
     const chatRooms = await chatRepository.findChatRooms({
-      $or: [{ penyewa: userId }, { pemilik: userId }],
+      $or: [{ tenant: userId }, { owner: userId }],
     });
 
     if (!chatRooms) throw new ResponseError(404, "Chat Room tidak ada");
@@ -161,7 +171,7 @@ export const chatService = {
     // ✅ Hitung jumlah pesan belum dibaca untuk setiap chat room
     const chatList = await Promise.all(
       chatRooms.map(async (chat: any) => {
-        const seender = userRole === "tenant" ? chat.pemilik : chat.penyewa;
+        const seender = userRole === "tenant" ? chat.owner : chat.tenant;
 
         const unreadMessages = await chatRepository.findMessages({
           chatRoom: chat._id,
@@ -172,15 +182,15 @@ export const chatService = {
         return {
           id: chat._id,
           kost: {
-            namaKost: `${chat.tipe_kost.nama_tipe} - ${chat.tipe_kost.kost.nama_kost}`,
-            fotoKost: chat.tipe_kost.photos[0].url || null,
+            namaKost: `${chat.roomType.name} - ${chat.roomType.kost.name}`,
+            fotoKost: chat.roomType.photos[0].url || null,
           },
           tenant: {
-            name: chat.penyewa.name,
+            name: chat.tenant.name,
           },
           sender: {
-            id: chat.penyewa._id,
-            name: chat.penyewa.name,
+            id: chat.tenant._id,
+            name: chat.tenant.name,
             role: userRole,
           },
           last_message: chat.lastMessage,
@@ -191,5 +201,25 @@ export const chatService = {
     );
 
     return chatList;
+  },
+
+  getChatOwner: async (
+    ownerId: string,
+    tenantId: string,
+    roomTypeId: string
+  ) => {
+    const owner = await userRepository.findById(ownerId);
+    // const tipeKost = await KostTypeRepository.findById(tipe_kost);
+
+    if (!owner) throw new ResponseError(404, "Forbidden");
+    // if (!tipeKost) throw new ResponseError(404, "KOST Tidak ditemukan");
+
+    let chatRoom = await chatRepository.findAll({
+      owner: ownerId,
+      tenant: tenantId,
+      roomType: roomTypeId,
+    });
+
+    return chatRoom;
   },
 };

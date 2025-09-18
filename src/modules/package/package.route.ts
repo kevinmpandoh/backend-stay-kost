@@ -8,7 +8,8 @@ const router = Router();
 router.use(auth);
 
 // 🔓 Public / Owner
-router.get("/", PackageController.getActivePackages); // semua paket aktif
+router.get("/", PackageController.getAll); // semua paket aktif
+router.get("/available", PackageController.getAvailablePackages); // semua paket aktif
 router.get("/:id", PackageController.getPackageById); // detail paket
 
 // 🔒 Admin only

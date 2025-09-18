@@ -10,7 +10,11 @@ const router = express.Router();
 router.use(auth);
 
 router.get("/", role(["owner"]), RoomController.getRoom);
-router.post("/", validate(createRoomSchema), RoomController.createRoom);
+router.post(
+  "/:roomTypeId",
+  validate(createRoomSchema),
+  RoomController.createRoom
+);
 router.get("/:roomTypeId", RoomController.getRoomsByKostType);
 router.put("/:roomId", validate(updateRoomSchema), RoomController.updateRoom);
 router.delete("/:roomId", RoomController.deleteRoom);

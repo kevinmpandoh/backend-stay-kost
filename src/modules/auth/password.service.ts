@@ -28,8 +28,6 @@ export async function requestReset(email: string) {
 }
 
 export async function resetPassword(token: string, newPassword: string) {
-  console.log("Resetting password for token:", token, newPassword);
-
   const key = `${RESET_NS}:${token}`;
   const userId = await redis.get(key);
   if (!userId)

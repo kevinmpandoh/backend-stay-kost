@@ -5,6 +5,7 @@ const roomSchema = new Schema<IRoom>(
   {
     roomType: { type: Schema.Types.ObjectId, ref: "RoomType", required: true },
     number: { type: String, required: true },
+    floor: { type: Number },
     status: {
       type: String,
       enum: Object.values(RoomStatus),

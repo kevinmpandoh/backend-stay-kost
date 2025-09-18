@@ -8,7 +8,7 @@ const server = createServer(app);
 
 const io = new SocketIOServer(server, {
   cors: {
-    origin: env.BASE_URL,
+    origin: env.FRONTEND_URL,
     methods: ["GET", "POST"],
     credentials: true,
   },

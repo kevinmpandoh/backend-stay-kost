@@ -43,16 +43,16 @@ export const createRoomTypeSchema = Joi.object({
       "any.invalid": "Jumlah kamar terisi tidak boleh lebih dari total kamar",
       "any.required": "Jumlah kamar terisi wajib diisi",
     }),
-  price: Joi.number().min(0).required().messages({
-    "number.base": "Harga harus berupa angka",
-    "number.min": "Harga minimal adalah 0",
-    "any.required": "Harga wajib diisi",
-  }),
-  kost: Joi.string().hex().length(24).required().messages({
-    "string.hex": "Kost ID harus berupa ObjectId yang valid",
-    "string.length": "Kost ID harus terdiri dari 24 karakter",
-    "any.required": "Kost ID wajib diisi",
-  }),
+  // price: Joi.number().min(0).required().messages({
+  //   "number.base": "Harga harus berupa angka",
+  //   "number.min": "Harga minimal adalah 0",
+  //   "any.required": "Harga wajib diisi",
+  // }),
+  // kost: Joi.string().hex().length(24).required().messages({
+  //   "string.hex": "Kost ID harus berupa ObjectId yang valid",
+  //   "string.length": "Kost ID harus terdiri dari 24 karakter",
+  //   "any.required": "Kost ID wajib diisi",
+  // }),
 });
 
 export const updateRoomTypeFacilitiesSchema = Joi.object({

@@ -7,6 +7,11 @@ import { uploadToCloudinary } from "@/utils/upload.utils";
 import cloudinary from "@/config/cloudinary";
 
 export const photoRoomService = {
+  async getPhotoByRoomType(roomTypeId: string) {
+    return await photoRoomRepository.findAll({
+      roomType: roomTypeId,
+    });
+  },
   async uploadPhoto(
     roomTypeId: string,
     file: Express.Multer.File,

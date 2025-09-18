@@ -23,8 +23,21 @@ router.put(
   PayoutController.updateBeneficiaries
 );
 
-router.post("/:payoutId/approve", PayoutController.approvePayout);
-router.post("/:payoutId/reject", PayoutController.rejectPayout);
-router.post("/:payoutId/send", PayoutController.sendPayout);
+router.post(
+  "/:payoutId/approve",
+  role(["admin"]),
+  PayoutController.approvePayout
+);
+router.post(
+  "/:payoutId/reject",
+  role(["admin"]),
+  PayoutController.rejectPayout
+);
+router.post(
+  "/:payoutId/send",
+  auth,
+  role(["admin"]),
+  PayoutController.sendPayout
+);
 
 export default router;

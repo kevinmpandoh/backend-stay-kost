@@ -5,17 +5,19 @@ import { uploadToCloudinary } from "@/utils/upload.utils";
 import cloudinary from "@/config/cloudinary";
 import { payoutCreator } from "@/config/midtrans";
 import { formatAliasName } from "@/utils/generateAliasName";
+import dayjs from "dayjs";
+import { mapMidtransValidationError } from "@/utils/mapMidtransValidatorErrors";
 
 const getCurrent = async (userId: string, role: string) => {
   const user = await userRepository.findById(userId);
   if (!user) throw new Error("User not found");
 
-  let profile = null;
-  if (role === "tenant") {
-    profile = await userRepository.findTenantByUser(userId);
-  } else if (role === "owner") {
-    profile = await userRepository.findOwnerByUser(userId);
-  }
+  // let profile = null;
+  // if (role === "tenant") {
+  //   profile = await userRepository.findTenantByUser(userId);
+  // } else if (role === "owner") {
+  //   profile = await userRepository.findOwnerByUser(userId);
+  // }
 
   return {
     id: user._id,
@@ -23,7 +25,14 @@ const getCurrent = async (userId: string, role: string) => {
     email: user.email,
     phone: user.phone,
     role: user.role,
-    profile,
+    photo: user.avatarUrl,
+    gender: user.tenantProfile?.gender,
+    birthDate: dayjs(user.tenantProfile?.birthDate).format("YYYY-MM-DD"),
+    job: user.tenantProfile?.job,
+    otherJob: user.tenantProfile?.otherJob,
+    emergencyContact: user.tenantProfile?.emergencyContact,
+    hometown: user.tenantProfile?.hometown,
+    bank: user.bank,
   };
 };
 
@@ -43,29 +52,54 @@ const changePassword = async (
   return user.save();
 };
 
-const updateProfile = async (userId: string, role: string, payload: any) => {
+const updateProfile = async (userId: any, payload: any) => {
+  const user = await userRepository.findById(userId);
+
+  if (!user) throw new ResponseError(404, "User tidak ditemukan");
+
   const userUpdate: any = {};
   if (payload.name) userUpdate.name = payload.name;
   if (payload.phone) userUpdate.phone = payload.phone;
 
-  await userRepository.updateById(userId, userUpdate);
+  console.log(user, payload, "TESTING");
 
-  if (role === "tenant") {
-    await userRepository.updateTenantProfile(userId, {
-      gender: payload.gender,
-      kotaAsal: payload.kotaAsal,
-      emergencyContact: payload.emergencyContact,
-      pekerjaan: payload.pekerjaan,
-      fotoKTP: payload.fotoKTP,
-    });
-  } else if (role === "owner") {
-    await userRepository.updateOwnerProfile(userId, {
-      bankAccount: payload.bankAccount,
-      bankName: payload.bankName,
-    });
+  if (user.role === "tenant") {
+    userUpdate.tenantProfile = {
+      ...user.tenantProfile, // merge biar ga overwrite kosong
+      gender: payload.gender ?? user.tenantProfile?.gender,
+      job: payload.job ?? user.tenantProfile?.job,
+      otherJob: payload.otherJob ?? user.tenantProfile?.otherJob,
+      hometown: payload.hometown ?? user.tenantProfile?.hometown,
+      emergencyContact:
+        payload.emergencyContact ?? user.tenantProfile?.emergencyContact,
+      birthDate: payload.birthDate
+        ? new Date(payload.birthDate) // simpan sebagai Date
+        : user.tenantProfile?.birthDate,
+    };
   }
 
-  return getCurrent(userId, role);
+  const newUser = await userRepository.updateById(user.id, userUpdate);
+  if (!newUser) throw new ResponseError(404, "User tidak ditemukan");
+
+  console.log(newUser, "NEW USER");
+
+  return {
+    id: newUser._id,
+    name: newUser.name,
+    email: newUser.email,
+    phone: newUser.phone,
+    role: newUser.role,
+    photo: newUser.avatarUrl,
+    gender: newUser.tenantProfile?.gender,
+    birthDate: newUser.tenantProfile?.birthDate
+      ? dayjs(newUser.tenantProfile.birthDate).format("D MMMM YYYY")
+      : null,
+    job: newUser.tenantProfile?.job,
+    otherJob: newUser.tenantProfile?.otherJob,
+    emergencyContact: newUser.tenantProfile?.emergencyContact,
+    hometown: newUser.tenantProfile?.hometown,
+    bank: newUser.bank,
+  };
 };
 
 const updateProfilePhoto = async (userId: string, photoUrl: string) => {
@@ -96,7 +130,7 @@ const updateOwnerBankAccount = async (userId: string, payload: any) => {
 };
 
 const getAllTenants = async () => {
-  return userRepository.findAll();
+  return userRepository.findAll({ role: "tenant" });
 };
 
 const getTenantById = async (id: string) => {
@@ -104,7 +138,7 @@ const getTenantById = async (id: string) => {
 };
 
 const getAllOwners = async () => {
-  return userRepository.findAll();
+  return userRepository.findAll({ role: "owner" });
 };
 
 const getOwnerById = async (id: string) => {
@@ -137,49 +171,66 @@ const uploadProfile = async (userId: string, file: Express.Multer.File) => {
 
 const getAvailableBanks = async () => {
   const banks = await payoutCreator.getBeneficiaryBanks();
-  return banks.beneficiary_banks;
+
+  // daftar bank yang mau ditampilkan
+  const allowedBanks = [
+    "bni",
+    "bri",
+    "mandiri",
+    "bca",
+    "permata",
+    "cimb",
+    "ovo",
+    "gopay",
+  ];
+
+  return banks.beneficiary_banks.filter((bank: { code: string }) =>
+    allowedBanks.includes(bank.code.toLowerCase())
+  );
 };
 
-const addBankAccount = async (ownerId: string, dto: BankAccountDTO) => {
+export const addBankAccount = async (ownerId: string, dto: BankAccountDTO) => {
   const owner = await userRepository.findById(ownerId);
   if (!owner) throw new ResponseError(404, "Owner not found");
   if (owner.role !== "owner")
-    throw new ResponseError(404, "User is not an owner");
+    throw new ResponseError(400, "User is not an owner");
 
-  if (dto.bank === "gopay") {
-    // account harus nomor hp diawali 62
-    if (!dto.account.startsWith("62")) {
-      throw new ResponseError(400, "Nomor GoPay harus diawali 62");
-    }
+  // Step 0: Validasi khusus GoPay / OVO
+  if (dto.bank === "gopay" && !dto.account.startsWith("62")) {
+    throw new ResponseError(400, "Nomor GoPay harus diawali 62");
   }
 
-  if (dto.bank === "ovo") {
-    // untuk OVO harus ditambah prefix 8066
-    if (!dto.account.startsWith("8066")) {
-      dto.account = "8066" + dto.account;
-    }
+  if (dto.bank === "ovo" && !dto.account.startsWith("8066")) {
+    dto.account = "8066" + dto.account;
   }
 
-  // Step 1: Validasi nomor rekening
-  const validation = await payoutCreator.validateBankAccount({
-    bank: dto.bank,
-    account: dto.account,
-  });
+  let validation;
+  try {
+    // Step 1: Validasi nomor rekening ke Midtrans
+    validation = await payoutCreator.validateBankAccount({
+      bank: dto.bank,
+      account: dto.account,
+    });
 
-  console.log(validation, "VALIDASI");
+    if (validation?.error_message) {
+      throw mapMidtransValidationError(validation);
+    }
+  } catch (error: any) {
+    // jika error dari Midtrans axios-like
+    if (error.ApiResponse) {
+      throw mapMidtransValidationError(error.ApiResponse);
+    }
 
-  if (!validation || validation.error_message) {
+    // fallback server error
     throw new ResponseError(
-      400,
-      validation?.error_message || "Bank account validation failed"
+      500,
+      error.message || "Terjadi kesalahan saat validasi rekening",
+      {}
     );
   }
 
   const accountName = validation.account_name;
-  // const aliasName = validation.id;
   const aliasName = formatAliasName(ownerId.toString(), dto.bank);
-
-  console.log(owner, "OWNERNYA");
 
   // Step 2: Jika belum ada beneficiary → create
   if (!owner.bank?.aliasName) {
@@ -191,7 +242,6 @@ const addBankAccount = async (ownerId: string, dto: BankAccountDTO) => {
         alias_name: aliasName,
         email: owner.email,
       });
-      console.log(result);
 
       owner.bank = {
         bankCode: dto.bank,
@@ -202,26 +252,33 @@ const addBankAccount = async (ownerId: string, dto: BankAccountDTO) => {
     } catch (error: any) {
       throw new ResponseError(
         error.httpStatusCode || 400,
-        error.ApiResponse.error_message,
-        error.ApiResponse.errors
+        error.ApiResponse?.error_message || "Gagal membuat beneficiary",
+        error.ApiResponse?.errors || {}
       );
     }
-  }
-  // Step 3: Jika sudah ada beneficiary → update
-  else {
-    await payoutCreator.updateBeneficiaries(owner.bank.aliasName, {
-      name: accountName,
-      account: dto.account,
-      bank: dto.bank,
-      alias_name: owner.bank?.aliasName,
-    });
+  } else {
+    // Step 3: Jika sudah ada beneficiary → update
+    try {
+      await payoutCreator.updateBeneficiaries(owner.bank.aliasName, {
+        name: accountName,
+        account: dto.account,
+        bank: dto.bank,
+        alias_name: owner.bank.aliasName,
+      });
 
-    owner.bank = {
-      ...owner.bank,
-      bankCode: dto.bank,
-      accountNumber: dto.account,
-      accountName,
-    };
+      owner.bank = {
+        ...owner.bank,
+        bankCode: dto.bank,
+        accountNumber: dto.account,
+        accountName,
+      };
+    } catch (error: any) {
+      throw new ResponseError(
+        error.httpStatusCode || 400,
+        error.ApiResponse?.error_message || "Gagal update beneficiary",
+        error.ApiResponse?.errors || {}
+      );
+    }
   }
 
   await owner.save();

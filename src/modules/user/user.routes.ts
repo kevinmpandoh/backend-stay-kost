@@ -3,14 +3,18 @@ import userController from "./user.controller";
 import { auth, role } from "../../middlewares/auth.middleware";
 import { upload } from "@/middlewares/upload.middleware";
 import { validate } from "@/middlewares/validate.middleware";
-import { bankAccountSchema } from "./user.validation";
+import { bankAccountSchema, updateProfileSchema } from "./user.validation";
 
 const router = Router();
 
 router.use(auth);
 
 router.get("/current", userController.getCurrent);
-router.patch("/current", userController.updateProfile);
+router.put(
+  "/current",
+  validate(updateProfileSchema),
+  userController.updateProfile
+);
 router.put("/change-password", userController.changePassword);
 router.post(
   "/upload",
@@ -25,6 +29,17 @@ router.put(
   validate(bankAccountSchema),
   userController.addOrUpdateBankAccount
 );
-// router.get("/banks", PayoutController.getAllBank);
+
+// Tenant management
+// router.get("/admins", userController.getAllTenants);
+// router.get("/admins/:id", userController.getTenantById);
+
+// Admin management
+router.get("/tenants", userController.getAllTenants);
+router.get("/tenants/:id", userController.getTenantById);
+
+// Owner management
+router.get("/owners", userController.getAllOwners);
+router.get("/owners/:id", userController.getOwnerById);
 
 export default router;

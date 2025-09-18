@@ -29,6 +29,21 @@ export const PaymentController = {
     }
   },
 
+  async changePaymentMethod(req: Request, res: Response, next: NextFunction) {
+    try {
+      const userId = req.user.id;
+      const { paymentId } = req.params;
+      const result = await PaymentService.changePaymentMethod(
+        userId,
+        paymentId,
+        req.body
+      );
+      res.status(200).json({ message: "Payment method updated", data: result });
+    } catch (error) {
+      next(error);
+    }
+  },
+
   async handleMidtransCallback(
     req: Request,
     res: Response,

@@ -8,19 +8,17 @@ const userSeeder = async () => {
     const deleteResult = await User.deleteMany();
     console.log(`Deleted ${deleteResult.deletedCount} user(s)`);
 
-    // Data user baru untuk diinsert
-    await User.create({
-      name: "Admin User",
-      email: "admin@gmail.com",
-      phone: "08123467123",
-      password: await bcrypt.hash("password", 10), // pastikan dihash beneran
-      role: "admin",
-      isVerified: true,
-    });
-
     await User.insertMany([
       {
-        name: "Owner 1",
+        name: "Admin",
+        email: "admin@gmail.com",
+        phone: "08123467123",
+        password: await bcrypt.hash("password", 10), // pastikan dihash beneran
+        role: "admin",
+        isVerified: true,
+      },
+      {
+        name: "Kevin Pandoh",
         email: "owner@gmail.com",
         phone: "08123467123",
         password: await bcrypt.hash("password", 10),
@@ -28,8 +26,8 @@ const userSeeder = async () => {
         isVerified: true,
       },
       {
-        name: "Owner 2",
-        email: "owner2@test.com",
+        name: "Mesiasi Supit",
+        email: "sashi@test.com",
         phone: "08123467123",
         password: await bcrypt.hash("password", 10),
         role: "owner",
@@ -39,7 +37,7 @@ const userSeeder = async () => {
 
     await User.insertMany([
       {
-        name: "Tenant 1",
+        name: "Kevin",
         email: "tenant@gmail.com",
         phone: "08123467123",
         password: await bcrypt.hash("password", 10),
@@ -47,8 +45,8 @@ const userSeeder = async () => {
         isVerified: true,
       },
       {
-        name: "Tenant 2",
-        email: "tenant2@test.com",
+        name: "Sashi",
+        email: "mesiasi@test.com",
         phone: "08123467123",
         password: await bcrypt.hash("password", 10),
         role: "tenant",

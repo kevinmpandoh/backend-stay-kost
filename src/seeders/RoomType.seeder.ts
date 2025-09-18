@@ -34,7 +34,7 @@ export const seedRoomTypes = async () => {
 
     // Simpan referensi ke model Kost
     await Kost.findByIdAndUpdate(kost._id, {
-      $set: { kost_type: tipeUntukKost },
+      $set: { roomTypes: tipeUntukKost },
     });
   }
 

@@ -27,4 +27,20 @@ export const PreferenceController = {
       next(error);
     }
   },
+
+  async getPreferenceKost(req: Request, res: Response, next: NextFunction) {
+    try {
+      const tenantId = req.user.id;
+      const recommendedKost = await PreferenceService.getPreferenceKost(
+        tenantId
+      );
+      res.status(200).json({
+        status: "success",
+        message: "Data Kost berhasil di ambil",
+        data: recommendedKost,
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
 };

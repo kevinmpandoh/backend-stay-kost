@@ -9,6 +9,7 @@ const router = express.Router();
 router.use(auth, role(["tenant"]));
 
 router.get("/", PreferenceController.getPreference);
+router.get("/kost", PreferenceController.getPreferenceKost);
 router.post(
   "/",
   validate(preferenceSchema),

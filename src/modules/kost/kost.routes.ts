@@ -45,6 +45,11 @@ router.patch(
   validate(updateFacilityKostSchema),
   kostController.updateFacilities
 );
+router.get(
+  "/:kostId/photo-kost",
+  // upload.single("photo"),
+  kostController.getAllPhotoKost
+);
 router.patch(
   "/:kostId/photo-kost",
   // upload.single("photo"),
@@ -64,8 +69,5 @@ router.patch(
   validate(rejectKostSchema),
   kostController.reject
 );
-
-// Tenant
-router.get("/recomendations", kostController.getRecommendedKost);
 
 export default router;

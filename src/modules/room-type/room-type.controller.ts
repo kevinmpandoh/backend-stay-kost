@@ -67,7 +67,12 @@ export default {
   updatePrice: async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { roomTypeId } = req.params;
-      const result = await RoomTypeService.updatePrice(roomTypeId, req.body);
+      const ownerId = req.user.id;
+      const result = await RoomTypeService.updatePrice(
+        roomTypeId,
+        req.body,
+        ownerId
+      );
       res.status(200).json({
         status: "success",
         message: "Harga berhasil ditambahkan.",

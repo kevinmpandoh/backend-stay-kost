@@ -14,6 +14,7 @@ import { seedFinishedBookingsPerKostType } from "./booking.seeder";
 import { seedReviews } from "./review.seeder";
 import userSeeder from "./user.seeder";
 import { env } from "@/config/env";
+import { seedPackages } from "./package.seeder";
 dotenv.config();
 
 export const main = async () => {
@@ -25,6 +26,7 @@ export const main = async () => {
     console.log("Connected to MongoDB");
 
     // Jalankan seeder setelah koneksi berhasil
+    await seedPackages();
     await userSeeder();
     await seedFacilities(); // Seed fasilitas
     await seedRules(); // Seed peraturan

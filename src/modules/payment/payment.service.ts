@@ -12,6 +12,8 @@ import { subscriptionService } from "../subscription/subscription.service";
 import { agenda } from "@/config/agenda";
 import { notificationService } from "../notification/notification.service";
 import { env } from "@/config/env";
+import { generateMidtransParams } from "@/utils/generateMidtransParams";
+import payoutService from "../payout/payout.service";
 
 export class PaymentService {
   private repo = new PaymentRepository();
@@ -59,7 +61,6 @@ export class PaymentService {
   }
 
   static async handleMidtransCallback(body: any) {
-    console.log(body, "DATA");
     // --- 1. Verifikasi Signature ---
     const rawSignature =
       body.order_id +
@@ -103,11 +104,17 @@ export class PaymentService {
     let newStatus:
       | PaymentStatus.PENDING
       | PaymentStatus.SUCCESS
-      | PaymentStatus.FAILED = PaymentStatus.PENDING;
+      | PaymentStatus.FAILED
+      | PaymentStatus.CANCELLED
+      | PaymentStatus.EXPIRED = PaymentStatus.PENDING;
     if (body.transaction_status === "settlement") {
       newStatus = PaymentStatus.SUCCESS;
-    } else if (["expire", "cancel", "deny"].includes(body.transaction_status)) {
+    } else if (["expire"].includes(body.transaction_status)) {
+      newStatus = PaymentStatus.EXPIRED;
+    } else if (body.transaction_status === "deny") {
       newStatus = PaymentStatus.FAILED;
+    } else if (body.transaction_status === "cancel") {
+      newStatus = PaymentStatus.CANCELLED;
     }
 
     // --- 4. Update Payment & Invoice ---
@@ -124,9 +131,11 @@ export class PaymentService {
         );
 
         if (invoice && invoice.subscription) {
-          await subscriptionService.activateSubscription(
-            invoice.subscription.toString()
-          );
+          const extendDuration = invoice.metadata?.extendDuration || 0;
+          await subscriptionService.activateSubscription({
+            subscriptionId: invoice.subscription.toString(),
+            duration: extendDuration,
+          });
         }
 
         // jika ini invoice booking pertama → aktifkan booking
@@ -134,22 +143,24 @@ export class PaymentService {
           payment.invoice.booking &&
           payment.invoice.booking.status === BookingStatus.WAITING_FOR_PAYMENT
         ) {
+          await bookingRepository.update(
+            {
+              tenant: payment.invoice.booking.tenant, // filter tenant
+              status: {
+                $in: [BookingStatus.PENDING, BookingStatus.WAITING_FOR_PAYMENT],
+              },
+              _id: { $ne: payment.invoice.booking._id }, // exclude booking ini
+            },
+            {
+              $set: { status: BookingStatus.EXPIRED },
+            }
+          );
+
           const booking = await bookingRepository.updateById(
             payment.invoice.booking,
             {
               status: BookingStatus.WAITING_FOR_CHECKIN,
               paymentDeadline: null,
-            }
-          );
-          await bookingRepository.update(
-            {
-              _id: payment.invoice.booking,
-              status: {
-                $in: [BookingStatus.PENDING, BookingStatus.WAITING_FOR_PAYMENT],
-              },
-            },
-            {
-              $set: { status: BookingStatus.EXPIRED },
             }
           );
 
@@ -162,6 +173,17 @@ export class PaymentService {
 
           // Pembayaran untuk sewa kamar {roomName} gagal atau kadaluarsa
         }
+        if (
+          payment.invoice.booking &&
+          payment.invoice.booking.status === BookingStatus.ACTIVE
+        ) {
+          await payoutService.createPayout({
+            invoice: payment.invoice,
+            ownerId: payment.invoice.booking.owner,
+          });
+          // Pembayaran untuk sewa kamar {roomName} gagal atau kadaluarsa
+        }
+
         await notificationService.sendNotification(
           payment.user._id,
           payment.user.role === "owner" ? "owner" : "tenant",
@@ -170,7 +192,7 @@ export class PaymentService {
           "Payment Success",
           { invoiceId: invoice?._id }
         );
-      } else if (newStatus === PaymentStatus.FAILED) {
+      } else if (newStatus === PaymentStatus.EXPIRED) {
         await notificationService.sendNotification(
           payment.user._id,
           payment.user.role === "owner" ? "owner" : "tenant",
@@ -196,9 +218,14 @@ export class PaymentService {
           path: "booking",
         },
       },
+      {
+        path: "user",
+        select: "role",
+      },
     ])) as any;
     if (!payment) throw new ResponseError(404, "Payment not found");
-    if (payment.user.toString() !== userId)
+
+    if (payment.user._id.toString() !== userId)
       throw new ResponseError(403, "Forbidden");
 
     // 2. Call ke Midtrans API
@@ -234,9 +261,11 @@ export class PaymentService {
         );
 
         if (invoice && invoice.subscription) {
-          await subscriptionService.activateSubscription(
-            invoice.subscription.toString()
-          );
+          const extendDuration = invoice.metadata?.extendDuration || 0;
+          await subscriptionService.activateSubscription({
+            subscriptionId: invoice.subscription.toString(),
+            duration: extendDuration,
+          });
         }
 
         // jika ini invoice booking pertama → aktifkan booking
@@ -244,31 +273,135 @@ export class PaymentService {
           payment.invoice.booking &&
           payment.invoice.booking.status === BookingStatus.WAITING_FOR_PAYMENT
         ) {
-          await bookingRepository.updateById(payment.invoice.booking, {
-            status: BookingStatus.WAITING_FOR_CHECKIN,
-            paymentDeadline: null,
-          });
           await bookingRepository.update(
             {
-              _id: payment.invoice.booking,
+              tenant: payment.invoice.booking.tenant, // filter tenant
               status: {
                 $in: [BookingStatus.PENDING, BookingStatus.WAITING_FOR_PAYMENT],
               },
+              _id: { $ne: payment.invoice.booking._id }, // exclude booking ini
             },
             {
               $set: { status: BookingStatus.EXPIRED },
             }
           );
+          await bookingRepository.update(
+            {
+              tenant: payment.invoice.booking.tenant, // filter tenant
+              status: {
+                $in: [BookingStatus.PENDING, BookingStatus.WAITING_FOR_PAYMENT],
+              },
+              _id: { $ne: payment.invoice.booking._id }, // exclude booking ini
+            },
+            {
+              $set: { status: BookingStatus.EXPIRED },
+            }
+          );
+
+          await bookingRepository.updateById(payment.invoice.booking._id, {
+            status: BookingStatus.WAITING_FOR_CHECKIN,
+            paymentDeadline: null,
+          });
+        }
+
+        if (
+          payment.status === PaymentStatus.PENDING &&
+          payment.invoice === "unpaid" &&
+          payment.invoice.booking &&
+          payment.invoice.booking.status === BookingStatus.ACTIVE
+        ) {
+          console.log("DIJALANKAN");
+          await payoutService.createPayout({
+            invoice: payment.invoice,
+            ownerId: payment.invoice.booking.owner,
+          });
+          // Pembayaran untuk sewa kamar {roomName} gagal atau kadaluarsa
         }
       }
+
       await payment.save();
     }
 
     return {
       paymentId: payment._id,
       status: payment.status,
-      invoice: payment.invoice,
+      amount: payment.amount,
+      type: payment.user.role,
     };
+  }
+
+  static async changePaymentMethod(
+    userId: string,
+    paymentId: string,
+    payload: {
+      provider: string;
+      method: string;
+      channel: string;
+    }
+  ) {
+    console.log(userId, paymentId, payload, "INI PAYLIOADNYA");
+    const payment = (await paymentRepository.findById(paymentId, [
+      {
+        path: "invoice",
+      },
+    ])) as any;
+    if (!payment) throw new ResponseError(404, "Payment not found");
+    if (payment.user.toString() !== userId)
+      throw new ResponseError(403, "Forbidden");
+
+    console.log(payment, "INI PAYMENNYA");
+
+    const transactionStatus = await midtrans.transaction.status(
+      payment.externalId
+    );
+
+    if (transactionStatus.transaction_status !== "pending") {
+      throw new ResponseError(
+        403,
+        "Cannot change payment method. Transaction is already processed."
+      );
+    }
+    let expiryTime = payment.expiredAt;
+    if (!expiryTime) throw new ResponseError(400, "Missing expiry time");
+
+    try {
+      await midtrans.transaction.cancel(payment.externalId);
+    } catch (error) {
+      console.log(error, "ERROR");
+      throw new ResponseError(400, "Failed to cancel transaction in Midtrans");
+    }
+    // const random = Math.random().toString(36).substring(2, 6).toUpperCase();
+
+    const params = generateMidtransParams(
+      payload.channel,
+      payment.invoice.invoiceNumber,
+      payment.amount,
+      expiryTime
+    );
+
+    const transaction = await midtrans.charge(params);
+
+    if (transaction.status_code !== "201") {
+      throw new ResponseError(
+        transaction.status_code,
+        transaction.status_message || "Midtrans Error",
+        transaction.validation_messages || []
+      );
+    }
+
+    return await paymentRepository.updateById(paymentId, {
+      externalId: transaction.transaction_id,
+      provider: payload.provider,
+      method: payload.method,
+      channel: payload.channel,
+      vaNumber:
+        transaction.va_numbers?.[0]?.va_number ||
+        transaction.permata_va_number ||
+        "",
+      billerCode: transaction.biller_code || "",
+      billKey: transaction.bill_key || "",
+      qrisUrl: transaction.actions?.[0]?.url || "",
+    });
   }
 
   async createSubscriptionTransaction(

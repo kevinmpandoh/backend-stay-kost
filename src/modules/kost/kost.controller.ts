@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import kostService from "./kost.service";
 import { NextFunction } from "express-serve-static-core";
+import { photoKostService } from "../photo-kost/photo-kost.service";
 
 export default {
   async listPublic(req: Request, res: Response, next: NextFunction) {
@@ -12,24 +13,19 @@ export default {
     }
   },
 
-  async getDetailKostPublic(req: Request, res: Response, next: NextFunction) {
+  async getKostById(req: Request, res: Response, next: NextFunction) {
     try {
-      const data = await kostService.getDetailKostPublic(req.params.roomTypeId);
+      const data = await kostService.getKostById(req.params.kostId);
       res.status(200).json({ status: "success", data });
     } catch (error) {
       next(error);
     }
   },
 
-  async getRecommendedKost(req: Request, res: Response, next: NextFunction) {
+  async getDetailKostPublic(req: Request, res: Response, next: NextFunction) {
     try {
-      const tenantId = req.user.id;
-      const recommendedKost = await kostService.getRecommendations(tenantId);
-      res.status(200).json({
-        status: "success",
-        message: "Data Kost berhasil di ambil",
-        data: recommendedKost,
-      });
+      const data = await kostService.getDetailKostPublic(req.params.roomTypeId);
+      res.status(200).json({ status: "success", data });
     } catch (error) {
       next(error);
     }
@@ -123,7 +119,7 @@ export default {
 
   async listAllPending(req: Request, res: Response, next: NextFunction) {
     try {
-      const kosts = await kostService.listAllPending(req);
+      const kosts = await kostService.listAllPending();
       res.status(200).json({ status: "success", data: kosts });
     } catch (error) {
       next(error);
@@ -161,6 +157,16 @@ export default {
       res
         .status(200)
         .json({ status: "success", message: "Data Kost berhasil di hapus" });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async getAllPhotoKost(req: Request, res: Response, next: NextFunction) {
+    try {
+      const kostId = req.params.kostId;
+      const photos = await photoKostService.getAllPhotos(kostId);
+      res.status(200).json({ status: "success", data: photos });
     } catch (error) {
       next(error);
     }

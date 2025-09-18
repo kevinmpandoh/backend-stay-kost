@@ -11,6 +11,9 @@ import { photoRoomRepository } from "../photo-room/photo-room.repository";
 import { createRoomTypePayload, RoomTypeStatus } from "./room-type.type";
 import { PhotoRoomCategory } from "../photo-room/photo-room.model";
 import { IRoomType } from "./room-type.model";
+import { notificationRepository } from "../notification/notification.repository";
+import { notificationService } from "../notification/notification.service";
+import { subscriptionRepository } from "../subscription/subscription.repository";
 
 export const RoomTypeService = {
   async getKostTypeOwner(roomTypeId: string) {
@@ -29,12 +32,13 @@ export const RoomTypeService = {
       status: roomType.status,
       nama_tipe: roomType.name,
       ukuran_kamar: roomType.size,
+
       jumlah_kamar: roomType.rooms?.length ?? 0,
-      jumlah_terisi: roomType.rooms?.filter(
-        (room: any) => room.status_ketersediaan === "Terisi"
+      kamar_terisi: roomType.rooms?.filter(
+        (room: any) => room.status === RoomStatus.OCCUPIED
       ).length,
       kamar_kosong: roomType.rooms?.filter(
-        (room: any) => room.status_ketersediaan === "Tersedia"
+        (room: any) => room.status === RoomStatus.AVAILABLE
       ).length,
       fasilitas: roomType.facilities.map((f: any) => f._id),
       harga: roomType.price,
@@ -85,31 +89,39 @@ export const RoomTypeService = {
     }
 
     return {
-      kostId: kost._id,
+      kost: kost._id,
       roomTypeId: roomType._id,
+      kostStatus: kost.status,
     };
   },
 
   async update(roomTypeId: string, ownerId: string, data: any) {
-    const roomType = await roomTypeRepository.findById(roomTypeId);
+    console.log(data, "DATANYA");
+    const roomType = (await roomTypeRepository.findById(roomTypeId, [
+      { path: "kost" },
+    ])) as any;
     if (!roomType) {
       throw new ResponseError(404, "Tipe Kost tidak ditemukan");
     }
 
-    const newRoomType = await roomTypeRepository.updateById(roomTypeId, data);
+    await roomTypeRepository.updateById(roomTypeId, {
+      ...data,
+    });
 
     await roomRepository.deleteMany({
       roomType: roomTypeId,
     });
 
     const rooms: RoomInput[] = [];
-    for (let i = 1; i <= data.total_kamar; i++) {
+    for (let i = 1; i <= data.total_rooms; i++) {
       rooms.push({
         roomType: roomTypeId,
         number: `Kamar ${i}`,
         floor: Math.ceil(i / 10), // Misalnya setiap 10 kamar pindah lantai
         status:
-          i <= data.kamar_terisi ? RoomStatus.OCCUPIED : RoomStatus.AVAILABLE,
+          i <= data.total_rooms_occupied
+            ? RoomStatus.OCCUPIED
+            : RoomStatus.AVAILABLE,
       });
     }
 
@@ -118,11 +130,16 @@ export const RoomTypeService = {
 
     const roomIds = savedRooms.map((room) => room._id);
 
-    await roomTypeRepository.updateById(roomTypeId, {
+    await roomTypeRepository.updateById(roomType._id, {
       rooms: roomIds,
     });
 
-    return newRoomType;
+    return {
+      kostId: roomType.kost._id,
+      roomTypeId: roomType?._id,
+      kostStatus: roomType.kost.status,
+      roomTypeStatus: roomType.status,
+    };
   },
 
   async updateFacilities(roomTypeId: string, payload: any) {
@@ -134,20 +151,22 @@ export const RoomTypeService = {
 
     if (!roomType) throw new ResponseError(404, "Tipe Kamar tidak ditemukan");
 
-    await roomTypeRepository.updateById(roomTypeId, {
+    const newRoomType = await roomTypeRepository.updateById(roomTypeId, {
       facilities: payload.facilities,
       progressStep: 3,
     });
 
     if (roomType.kost.status === KostStatus.DRAFT) {
       await kostRepository.updateById(roomType.kost._id, {
-        progressStep: 6,
+        progressStep: 7,
       });
     }
 
     return {
       kostId: roomType.kost._id,
       roomTypeId,
+      kostStatus: roomType.kost.status,
+      facilities: newRoomType?.facilities,
     };
   },
 
@@ -157,7 +176,7 @@ export const RoomTypeService = {
         path: "kost",
       },
     ])) as any;
-    if (!roomType) throw new Error("Kost tidak ditemukan");
+    if (!roomType) throw new ResponseError(404, "Kost tidak ditemukan");
 
     const categories = [PhotoRoomCategory.INSIDE_ROOM];
 
@@ -194,23 +213,27 @@ export const RoomTypeService = {
       progressStep: 4,
     });
 
-    if (roomType.kost.progressStep < 7) {
+    if (
+      roomType.kost.status === KostStatus.DRAFT &&
+      roomType.kost.progressStep < 8
+    ) {
       await kostRepository.updateById(roomType.kost._id, {
-        progressStep: 7,
+        progressStep: 8,
       });
     }
 
     return {
       kostId: roomType.kost._id.toString(),
+      kostStatus: roomType.kost.status,
       roomTypeId: roomType._id.toString(),
     };
   },
 
-  async updatePrice(roomTypeId: string, payload: any) {
+  async updatePrice(roomTypeId: string, payload: any, ownerId: string) {
     const roomType = (await roomTypeRepository.findById(roomTypeId, [
       {
         path: "kost",
-        select: "isPublished",
+        select: "isPublished status",
       },
     ])) as any;
     if (!roomType) throw new ResponseError(404, "Tipe kost tidak ditemukan");
@@ -221,9 +244,54 @@ export const RoomTypeService = {
     });
 
     if (!roomType.kost?.isPublished) {
+      const subscription = (await subscriptionRepository.findOne(
+        {
+          owner: ownerId,
+          status: "active",
+        },
+        [
+          {
+            path: "package",
+          },
+        ]
+      )) as any;
+
+      if (!subscription) {
+        throw new ResponseError(
+          404,
+          "Anda belum memiliki paket langganan Aktif"
+        );
+      }
+
+      if (subscription.endDate && subscription.endDate < new Date()) {
+        throw new ResponseError(404, "Paket langganan Anda sudah expired");
+      }
+
+      if (subscription.package.maxKost) {
+        const countKost = await kostRepository.count({
+          owner: ownerId,
+          isPublished: true,
+        });
+        if (countKost >= subscription.package.maxKost) {
+          throw new ResponseError(
+            404,
+            `Paket Anda hanya bisa menambahkan ${subscription.package.maxKost} kost.  Upgrade paket untuk menambahkan lagi.`
+          );
+        }
+      }
       await kostRepository.updateById(roomType.kost._id.toString(), {
         status: KostStatus.PENDING,
       });
+
+      // await notificationService.sendNotification(
+      //   toRole: "admin",
+      //   title: "Pengajuan Kost Baru",
+      //   message: `Kost baru dengan tipe kamar '${roomType.name}' telah diajukan untuk dipublikasikan.`,
+      //   data: {
+      //     kostId: roomType.kost._id.toString(),
+      //     roomTypeId: roomType._id.toString(),
+      //   },
+      // );
     }
 
     return roomType;

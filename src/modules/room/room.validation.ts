@@ -1,11 +1,13 @@
 import Joi from "joi";
 
 export const createRoomSchema = Joi.object({
-  name: Joi.string(),
-  category: Joi.string().valid("common", "room").required(),
+  number: Joi.string().required(),
+  floor: Joi.number().min(1).required(),
+  status: Joi.string().valid("available", "occupied", "maintenance").required(),
 });
 
 export const updateRoomSchema = Joi.object({
-  name: Joi.string(),
-  category: Joi.string().valid("common", "room"),
+  number: Joi.string().optional(),
+  floor: Joi.number().min(1).optional(),
+  status: Joi.string().valid("available", "occupied", "maintenance").optional(),
 });

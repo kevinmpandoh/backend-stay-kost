@@ -1,12 +1,19 @@
 import { Schema, model, Document, Types } from "mongoose";
 
+interface IPackageDuration {
+  duration: number; // bulan
+  price: number; // harga total
+  discount?: string;
+  oldPrice?: number;
+}
+
 export interface IPackage extends Document {
   _id: Types.ObjectId;
   name: string; // Nama paket, misalnya "Basic", "Pro", "Enterprise"
   description?: string; // deskripsi tambahan
-
+  type: string; // free, pro, premium
   price: number; // harga langganan
-  duration: number; // lama berlangganan dalam hari/bulan (misalnya 30 = 1 bulan)
+  durations: IPackageDuration[];
 
   features: string[]; // list fitur yang didapat
   maxKost?: number; // maksimal kost yang bisa dikelola
@@ -22,11 +29,17 @@ const PackageSchema = new Schema<IPackage>(
   {
     name: { type: String, required: true },
     description: { type: String },
-
-    price: { type: Number, required: true },
-    duration: { type: Number, required: true }, // dalam hari
-
     features: [{ type: String }],
+    type: { type: String, enum: ["free", "pro", "premium"], default: "pro" },
+    durations: [
+      {
+        duration: { type: Number, required: true },
+        price: { type: Number, required: true },
+        discount: { type: String },
+        oldPrice: { type: Number },
+      },
+    ],
+
     maxKost: { type: Number },
     maxRoom: { type: Number },
     prioritySupport: { type: Boolean, default: false },

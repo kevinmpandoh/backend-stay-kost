@@ -42,7 +42,12 @@ export const notificationService = {
     page: number = 1,
     limit: number = 20
   ) => {
-    return await notificationRepository.findAll({ user: userId, role });
+    return await notificationRepository.findAll(
+      { user: userId, role },
+      {
+        sort: { createdAt: -1 },
+      }
+    );
   },
 
   markAsRead: async (notificationId: string) => {

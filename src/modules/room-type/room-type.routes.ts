@@ -11,6 +11,7 @@ import {
 } from "./room-type.validation";
 import { upload } from "@/middlewares/upload.middleware";
 import { uploadPhotoRoomSchema } from "../photo-room/photo-room.validation";
+import { PhotoRoomController } from "../photo-room/photo-room.controller";
 
 const router = Router();
 
@@ -55,11 +56,12 @@ router.patch(
   validate(updateRoomTypeFacilitiesSchema),
   roomTypeController.updateFacilities
 );
+
+router.get("/:roomTypeId/photo-room", PhotoRoomController.getPhotoByRoomType);
 router.patch(
   "/:roomTypeId/photo-room",
   auth,
   role(["owner"]),
-  upload.single("photo"),
   roomTypeController.updatePhotoRoom
 );
 

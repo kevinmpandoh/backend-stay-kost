@@ -4,6 +4,10 @@ export class AuthRepository {
   findByEmail(email: string) {
     return User.findOne({ email });
   }
+  findByEmailAndRole(email: string, role: string) {
+    console.log(email, role);
+    return User.findOne({ email, role });
+  }
   createUser(data: Partial<IUser>) {
     return User.create(data);
   }

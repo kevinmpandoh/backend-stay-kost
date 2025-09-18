@@ -3,29 +3,9 @@ import { KostType } from "../kost/kost.type";
 
 export const preferenceSchema = Joi.object({
   address: Joi.object({
-    type: Joi.string().valid("map", "address").default("map").required(),
-    province: Joi.string().when("type", {
-      is: "address",
-      then: Joi.required(),
-      otherwise: Joi.forbidden(),
-    }),
-    city: Joi.string().when("type", {
-      is: "address",
-      then: Joi.required(),
-      otherwise: Joi.forbidden(),
-    }),
-    district: Joi.string().when("type", {
-      is: "address",
-      then: Joi.required(),
-      otherwise: Joi.forbidden(),
-    }),
     coordinates: Joi.object({
       lat: Joi.number().required(),
       lng: Joi.number().required(),
-    }).when("type", {
-      is: "map",
-      then: Joi.required(),
-      otherwise: Joi.forbidden(),
     }),
   }).required(),
   price: Joi.object({

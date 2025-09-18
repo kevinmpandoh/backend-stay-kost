@@ -10,7 +10,7 @@ router.use(auth);
 
 router.get("/", ReviewController.getAllReviews);
 router.get("/owner", role(["owner"]), ReviewController.getReviewsOwner);
-router.post("/review", ReviewController.createReview);
+router.post("/:reviewId", ReviewController.replyReview);
 router.patch(
   "/:reviewId/reply",
   validate(createReplyReviewSchema),

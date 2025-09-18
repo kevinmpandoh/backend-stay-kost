@@ -2,8 +2,18 @@
 import { Request, Response } from "express";
 import { photoRoomService } from "./photo-room.service";
 import { PhotoRoomCategory } from "./photo-room.model";
+import { NextFunction } from "express-serve-static-core";
 
 export const PhotoRoomController = {
+  async getPhotoByRoomType(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { roomTypeId } = req.params;
+      const photos = await photoRoomService.getPhotoByRoomType(roomTypeId);
+      res.status(200).json({ status: "success", data: photos });
+    } catch (error) {
+      next(error);
+    }
+  },
   async upload(req: Request, res: Response) {
     try {
       const { roomTypeId, category } = req.body;

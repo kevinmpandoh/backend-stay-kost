@@ -15,10 +15,34 @@ router.post(
   subscriptionController.createSubscription
 );
 
-// Get subscription aktif milik owner
-router.get("/me", subscriptionController.getMySubscription);
+// Subscription aktif sekarang
+router.get(
+  "/current",
+  role(["owner"]),
+  subscriptionController.getCurrentSubscription
+);
 
-// Admin/Owner lihat semua subscription
+// Semua subscription user
+router.get("/me", role(["owner"]), subscriptionController.getMySubscription);
+
+router.get(
+  "/invoices",
+  role(["owner"]),
+  subscriptionController.getSubscriptionInvoices
+);
+router.post(
+  "/invoices/:invoiceId/cancel",
+  role(["owner"]),
+  subscriptionController.cancelSubscriptionInvoice
+);
+
+// Renew subscription tertentu
+router.post(
+  "/:subscriptionId/renew",
+  role(["owner"]),
+  subscriptionController.renewSubscription
+);
+
 router.get("/", subscriptionController.getAll);
 
 export default router;

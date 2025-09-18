@@ -6,6 +6,10 @@ export type Role = "admin" | "owner" | "tenant";
 export interface TenantProfile {
   gender?: "male" | "female" | "other";
   job?: string;
+  otherJob?: string;
+  birthDate?: Date;
+  hometown?: string;
+  emergencyContact?: string;
 }
 export interface OwnerProfile {
   bankAccountNumber?: string;
@@ -36,7 +40,15 @@ export interface IUser extends Document {
 }
 
 const TenantSchema = new Schema<TenantProfile>(
-  { gender: { type: String, enum: ["male", "female", "other"] }, job: String },
+  {
+    gender: { type: String, enum: ["male", "female", "other"] },
+    job: String,
+    otherJob: String,
+    birthDate: Date,
+    hometown: String,
+    emergencyContact: String,
+  },
+
   { _id: false }
 );
 

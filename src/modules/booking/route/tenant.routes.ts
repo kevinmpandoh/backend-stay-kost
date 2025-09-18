@@ -16,17 +16,17 @@ const router = express.Router();
 router.use(auth, role(["tenant"]));
 
 router.get("/", bookingController.getBookingListTenant);
+router.post(
+  "/",
+  validate(createBookingSchema),
+  bookingController.createBooking
+);
 router.get("/active", role(["tenant"]), bookingController.getActiveBookings);
 router.get("/history", bookingController.getBookingHistoryTenant);
 router.post(
   "/upload",
   upload.single("photo"),
   bookingController.uploadDocument
-);
-router.post(
-  "/",
-  validate(createBookingSchema),
-  bookingController.createBooking
 );
 router.post("/:bookingId/check-in", bookingController.checkIn);
 router.post("/:bookingId/check-out", bookingController.checkOut);

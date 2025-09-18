@@ -39,6 +39,12 @@ export const photoKostService = {
     return photo;
   },
 
+  async getAllPhotos(kostId: string) {
+    return await photoKostRepository.findAll({
+      kost: kostId,
+    });
+  },
+
   async deletePhoto(photoId: string) {
     const photo = await photoKostRepository.findById(photoId);
     if (!photo || !photo.kost)
@@ -77,60 +83,4 @@ export const photoKostService = {
 
     return updatedPhoto;
   },
-
-  //   async getPhoto(req: any) {
-  //     return await photoKostRepository.getPhotosById(req.params.photoId);
-  //   },
-  //   async getAllPhotos(req: any) {
-  //     return await photoKostRepository.getPhotosByKostId(req.params.kostId);
-  //   },
-  //   async validateAndUpdateProgressStep(kostId: string) {
-  //     const kost = await Kost.findById(kostId);
-  //     if (!kost) throw new ResponseError(404, "Kost tidak ditemukan");
-
-  //     // 🚀 Cek jumlah foto per kategori
-  //     const categories = ["Tampak Depan", "Dalam Bangunan", "Dari Jalan"];
-  //     const photoCounts = await Promise.all(
-  //       categories.map(async (category) => {
-  //         return {
-  //           category,
-  //           count: await photoKostRepository.countPhotoByCategory(
-  //             kostId,
-  //             category
-  //           ),
-  //         };
-  //       })
-  //     );
-
-  //     // 🚨 Jika ada kategori yang kurang, beri error
-  //     const missingCategories = photoCounts.filter((p) => p.count < 1);
-  //     if (missingCategories.length > 0) {
-  //       const errorDetails: Record<string, string> = {};
-  //       missingCategories.forEach((m) => {
-  //         errorDetails[
-  //           m.category
-  //         ] = `Minimal 1 foto untuk kategori '${m.category}' diperlukan`;
-  //       });
-  //       throw new ResponseError(
-  //         400,
-  //         "Beberapa kategori foto belum lengkap",
-  //         errorDetails
-  //       );
-  //     }
-  //     if (kost.status === "Aktif" || kost.status === "Ditolak") {
-  //       await KostRepository.update(kostId, {
-  //         status: "Menunggu Verifikasi",
-  //         alasan_penolakan: null,
-  //       });
-  //     }
-
-  //     // ✅ Jika lolos validasi, update progress_step ke langkah berikutnya
-  //     kost.progress_step = 5; // Misal langkah berikutnya adalah 3
-  //     await kost.save();
-
-  //     return {
-  //       kostId,
-  //       progress_step: kost.progress_step,
-  //     };
-  //   },
 };

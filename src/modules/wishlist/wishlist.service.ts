@@ -54,7 +54,7 @@ export const WishlistService = {
       return {
         id: data._id,
         roomType_id: roomType._id,
-        namaKost: `${kost.name} - ${roomType.name}`,
+        kostName: `${kost.name} - ${roomType.name}`,
         address: `${address.district}, ${address.city}`,
         type: kost.type,
         price: roomType.price,
@@ -94,11 +94,8 @@ export const WishlistService = {
       roomType: roomTypeId,
       tenant: tenantId,
     });
+
     if (!wishlist) throw new ResponseError(404, "Wishlist tidak ditemukan");
-    return await wishlistRepository.deleteById(wishlist._id, {
-      tenant: tenantId,
-      kost: wishlist.kost,
-      roomType: roomTypeId,
-    });
+    return await wishlistRepository.deleteById(wishlist._id);
   },
 };

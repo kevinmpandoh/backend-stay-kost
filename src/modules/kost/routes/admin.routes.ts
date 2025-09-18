@@ -12,6 +12,10 @@ router.get(
   "/",
   kostController.listAllPending // lihat semua kost pending
 );
+router.get(
+  "/:kostId",
+  kostController.getKostById // lihat semua kost pending
+);
 router.patch("/:kostId/approve", kostController.approve);
 router.patch(
   "/:kostId/reject",

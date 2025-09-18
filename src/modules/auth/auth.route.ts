@@ -9,10 +9,12 @@ import {
   resetPassword,
   logout,
   googleCallbackRedirect,
+  loginAdmin,
 } from "./auth.controller";
 import { validate } from "../../middlewares/validate.middleware";
 import {
   forgotSchema,
+  loginAdminSchema,
   loginSchema,
   registerSchema,
   resendOtpSchema,
@@ -29,6 +31,7 @@ router.post("/register", validate(registerSchema), register);
 router.post("/verify-otp", validate(verifyOtpSchema), verifyOtp);
 router.post("/resend-otp", validate(resendOtpSchema), resendOTP);
 router.post("/login", validate(loginSchema), login);
+router.post("/login/admin", validate(loginAdminSchema), loginAdmin);
 router.post("/refresh-token", refreshToken);
 router.post("/logout", auth, logout);
 router.post("/forgot-password", validate(forgotSchema), forgotPassword);

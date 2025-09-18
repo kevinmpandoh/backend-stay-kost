@@ -15,7 +15,6 @@ const facilitiesData = [
   { name: "Penjaga Kos", category: "kost" },
   { name: "Pengurus Kos", category: "kost" },
   { name: "Laundry", category: "kost" },
-  { name: "R. Keluarga", category: "kost" },
   { name: "R. Jemur", category: "kost" },
   { name: "R. Santai", category: "kost" },
   { name: "R. Keluarga", category: "kost" },

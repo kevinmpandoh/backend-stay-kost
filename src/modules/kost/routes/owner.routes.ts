@@ -9,6 +9,7 @@ import {
   updateFacilityKostSchema,
   updateKostSchema,
 } from "../kost.validation";
+import { createRoomTypeSchema } from "@/modules/room-type/room-type.validation";
 
 const router = Router();
 
@@ -18,7 +19,7 @@ router.get("/", auth, kostController.listOwnerKost);
 router.get("/:kostId", kostController.getDetailOwnerKost);
 router.post("/", validate(createKostSchema), kostController.createKost);
 router.get("/:kostId", kostController.getDetailOwnerKost);
-router.patch("/:kostId", validate(updateKostSchema), kostController.updateKost);
+router.put("/:kostId", validate(updateKostSchema), kostController.updateKost);
 router.patch(
   "/:kostId/address",
   validate(updateAddressKostSchema),
@@ -29,12 +30,21 @@ router.patch(
   validate(updateFacilityKostSchema),
   kostController.updateFacilities
 );
+router.get(
+  "/:kostId/photo-kost",
+  // upload.single("photo"),
+  kostController.getAllPhotoKost
+);
 router.patch(
   "/:kostId/photo-kost",
   // upload.single("photo"),
   kostController.updatePhotoKost
 );
-router.post("/:kostId/room-type", kostController.updateRoomType);
+router.post(
+  "/:kostId/room-type",
+  validate(createRoomTypeSchema),
+  kostController.updateRoomType
+);
 router.delete("/:kostId", auth, kostController.deleteKost);
 
 export default router;

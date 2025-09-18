@@ -42,6 +42,11 @@ export const resendOtpSchema = Joi.object({
 export const loginSchema = Joi.object({
   email: Joi.string().email().required(),
   password: Joi.string().required(),
+  role: Joi.string().valid("tenant", "owner").required(),
+});
+export const loginAdminSchema = Joi.object({
+  email: Joi.string().email().required(),
+  password: Joi.string().required(),
 });
 
 export const forgotSchema = Joi.object({
