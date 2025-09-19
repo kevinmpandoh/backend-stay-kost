@@ -310,7 +310,6 @@ export class PaymentService {
           payment.invoice.booking &&
           payment.invoice.booking.status === BookingStatus.ACTIVE
         ) {
-          console.log("DIJALANKAN");
           await payoutService.createPayout({
             invoice: payment.invoice,
             ownerId: payment.invoice.booking.owner,
@@ -339,7 +338,6 @@ export class PaymentService {
       channel: string;
     }
   ) {
-    console.log(userId, paymentId, payload, "INI PAYLIOADNYA");
     const payment = (await paymentRepository.findById(paymentId, [
       {
         path: "invoice",
@@ -348,8 +346,6 @@ export class PaymentService {
     if (!payment) throw new ResponseError(404, "Payment not found");
     if (payment.user.toString() !== userId)
       throw new ResponseError(403, "Forbidden");
-
-    console.log(payment, "INI PAYMENNYA");
 
     const transactionStatus = await midtrans.transaction.status(
       payment.externalId

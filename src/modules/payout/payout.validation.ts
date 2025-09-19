@@ -23,3 +23,9 @@ export const updateBeneficiariesSchema = Joi.object({
   }),
   email: Joi.string().email().required(),
 });
+
+export const queryFilterPayoutSchema = Joi.object({
+  page: Joi.number().integer().min(1).default(1).optional(),
+  search: Joi.string().allow("").trim().optional(),
+  status: Joi.string().allow("").trim().optional(),
+});

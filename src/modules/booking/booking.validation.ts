@@ -33,3 +33,10 @@ export const extendBookingSchema = Joi.object({
 export const rejectBookingSchema = Joi.object({
   rejectionReason: Joi.string().required(),
 });
+
+export const queryFilterSchema = Joi.object({
+  page: Joi.number().integer().min(1).default(1).optional(),
+  search: Joi.string().allow("").trim().optional(),
+  status: Joi.string().allow("").trim().optional(),
+  kostId: Joi.string().optional(),
+});

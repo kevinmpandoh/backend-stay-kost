@@ -5,6 +5,7 @@ import { upload } from "@/middlewares/upload.middleware";
 import { validate } from "@/middlewares/validate.middleware";
 import {
   createBookingSchema,
+  queryFilterSchema,
   rejectBookingSchema,
   stopRentRequestSchema,
   updateBookingSchema,
@@ -28,8 +29,17 @@ router.get(
   role(["tenant"]),
   bookingController.getBookingHistoryTenant
 );
-router.get("/admin", bookingController.getAllBookingAdmin);
-router.get("/owner", role(["owner"]), bookingController.getAllBookingOwner);
+router.get(
+  "/admin",
+  validate(queryFilterSchema, "query"),
+  bookingController.getAllBookingAdmin
+);
+router.get(
+  "/owner",
+  role(["owner"]),
+  validate(queryFilterSchema, "query"),
+  bookingController.getAllBookingOwner
+);
 router.get(
   "/owner/active",
   role(["owner"]),

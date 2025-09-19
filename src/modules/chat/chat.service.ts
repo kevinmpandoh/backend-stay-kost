@@ -21,7 +21,6 @@ export const chatService = {
       { path: "kost" },
     ])) as any;
     if (!roomType) throw new ResponseError(404, "Kost tidak ditemukan");
-    console.log(userId, tenantId, "TES");
 
     // tenantId bisa datang dari user yang login (jika tenant) atau dari parameter (jika owner)
     const tenant = tenantId || userId;

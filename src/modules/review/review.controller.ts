@@ -4,9 +4,11 @@ import { ReviewService } from "./review.service";
 export const ReviewController = {
   async getAllReviews(req: Request, res: Response, next: NextFunction) {
     try {
-      const reviews = await ReviewService.getAllReviews(req);
+      const reviews = await ReviewService.getAllReviews({
+        query: req.validatedQuery,
+      });
 
-      res.json({ status: "success", data: reviews });
+      res.json({ status: "success", ...reviews });
     } catch (error) {
       next(error);
     }

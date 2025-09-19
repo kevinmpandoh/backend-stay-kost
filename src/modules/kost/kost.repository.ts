@@ -1,4 +1,6 @@
 import { BaseRepository } from "../../core/base.repository";
+import { RoomTypeStatus } from "../room-type/room-type.type";
+import { Room } from "../room/room.model";
 import { RoomStatus } from "../room/room.type";
 import { IKost, Kost } from "./kost.model";
 import mongoose, { FilterQuery, Types } from "mongoose";
@@ -61,7 +63,7 @@ export class KostRepository extends BaseRepository<IKost> {
   async findRoomTypesWithFilters(query: any) {
     const {
       page = 1,
-      limit = 10,
+      limit = 16,
       minPrice = 0,
       maxPrice,
       kostType,
@@ -109,6 +111,13 @@ export class KostRepository extends BaseRepository<IKost> {
     // 3. FLATTEN TIPE KOST (kalau 1 kost bisa punya banyak tipe)
     pipeline.push({
       $unwind: "$roomTypes",
+    });
+
+    pipeline.push({
+      $match: {
+        isPublished: true,
+        "roomTypes.status": RoomTypeStatus.ACTIVE,
+      },
     });
 
     // 5. FILTER price

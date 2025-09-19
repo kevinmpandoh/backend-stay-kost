@@ -3,11 +3,20 @@ import express from "express";
 import { PayoutController } from "./payout.controller";
 
 import { validate } from "@/middlewares/validate.middleware";
-import { updateBeneficiariesSchema } from "./payout.validation";
+import {
+  queryFilterPayoutSchema,
+  updateBeneficiariesSchema,
+} from "./payout.validation";
 
 const router = express.Router();
 
-router.get("/", auth, role(["admin"]), PayoutController.getAllPayout);
+router.get(
+  "/",
+  auth,
+  role(["admin"]),
+  validate(queryFilterPayoutSchema, "query"),
+  PayoutController.getAllPayout
+);
 router.post("/callback", PayoutController.handleMidtransCallback);
 router.get(
   "/beneficiaries",

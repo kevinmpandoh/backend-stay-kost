@@ -107,9 +107,25 @@ export const DashboardService = {
     const now = new Date();
     const oneYearAgo = new Date(now.getFullYear() - 1, now.getMonth(), 1);
     const monthlyRevenue = await Invoice.aggregate([
+      // {
+      //   $match: {
+      //     // user: new mongoose.Types.ObjectId(ownerId),
+      //     status: "paid",
+      //     dueDate: { $gte: oneYearAgo },
+      //   },
+      // },
+      {
+        $lookup: {
+          from: "bookings",
+          localField: "booking",
+          foreignField: "_id",
+          as: "booking",
+        },
+      },
+      { $unwind: "$booking" },
       {
         $match: {
-          // user: new mongoose.Types.ObjectId(ownerId),
+          "booking.owner": new mongoose.Types.ObjectId(ownerId),
           status: "paid",
           dueDate: { $gte: oneYearAgo },
         },
@@ -124,13 +140,14 @@ export const DashboardService = {
         },
       },
       { $sort: { "_id.tahun": 1, "_id.bulan": 1 } },
+
       // {
       //   $group: {
       //     _id: { $month: "$dueDate" },
       //     total: { $sum: "$amount" },
       //   },
       // },
-      { $sort: { _id: 1 } },
+      // { $sort: { _id: 1 } },
     ]);
 
     const startOfMonth = new Date();
@@ -252,7 +269,7 @@ export const DashboardService = {
 
     // Total keuntungan admin
     const totalKeuntunganAdmin = await Invoice.aggregate([
-      { $match: { type: "tenant", status: "paid" } },
+      { $match: { type: "owner", status: "paid" } },
       {
         $group: {
           _id: null,
@@ -271,7 +288,7 @@ export const DashboardService = {
     const pendapatanPerBulan = await Invoice.aggregate([
       {
         $match: {
-          type: "tenant",
+          type: "owner",
           status: "paid",
           dueDate: { $gte: oneYearAgo },
         },

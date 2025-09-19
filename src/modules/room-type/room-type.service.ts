@@ -96,7 +96,6 @@ export const RoomTypeService = {
   },
 
   async update(roomTypeId: string, ownerId: string, data: any) {
-    console.log(data, "DATANYA");
     const roomType = (await roomTypeRepository.findById(roomTypeId, [
       { path: "kost" },
     ])) as any;

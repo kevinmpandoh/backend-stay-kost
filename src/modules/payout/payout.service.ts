@@ -13,13 +13,35 @@ import { mapPayoutError } from "@/utils/payoutErrorMapper";
 import { env } from "@/config/env";
 import { notificationService } from "../notification/notification.service";
 
-const getAllPayout = async () => {
-  return await payoutRepository.findAll({}, {}, [
-    {
-      path: "owner",
-      select: "name avatarUrl email phone",
+const getAllPayout = async ({
+  query,
+}: {
+  query: {
+    status: string;
+    search: string;
+    sort: string;
+    page: number;
+  };
+}) => {
+  const payouts = await payoutRepository.findPayoutsWithFilters({
+    page: query.page || 1,
+    limit: 10,
+    status: query.status,
+    search: query.search,
+    sort: query.sort,
+  });
+
+  return {
+    data: payouts.docs,
+    pagination: {
+      total: payouts.totalDocs,
+      page: payouts.page,
+      limit: payouts.limit,
+      totalPages: payouts.totalPages,
+      hasNextPage: payouts.hasNextPage,
+      hasPrevPage: payouts.hasPrevPage,
     },
-  ]);
+  };
 };
 
 const getAllBeneficiaries = async () => {

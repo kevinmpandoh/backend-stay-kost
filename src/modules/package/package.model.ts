@@ -17,8 +17,8 @@ export interface IPackage extends Document {
 
   features: string[]; // list fitur yang didapat
   maxKost?: number; // maksimal kost yang bisa dikelola
+  maxRoomType?: number; // maksimal tipe kamar yang bisa dikelola
   maxRoom?: number; // maksimal kamar yang bisa ditambahkan
-  prioritySupport?: boolean; // contoh: dapat support khusus
 
   isActive: boolean; // apakah paket bisa dipilih atau tidak
   createdAt: Date;
@@ -41,8 +41,8 @@ const PackageSchema = new Schema<IPackage>(
     ],
 
     maxKost: { type: Number },
+    maxRoomType: { type: Number },
     maxRoom: { type: Number },
-    prioritySupport: { type: Boolean, default: false },
 
     isActive: { type: Boolean, default: true },
   },

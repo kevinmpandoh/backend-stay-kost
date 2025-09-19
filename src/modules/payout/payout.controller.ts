@@ -4,11 +4,13 @@ import payoutService from "./payout.service";
 export const PayoutController = {
   async getAllPayout(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await payoutService.getAllPayout();
+      const result = await payoutService.getAllPayout({
+        query: req.validatedQuery,
+      });
       res.status(200).json({
         status: "success",
         message: "Berhasil mendapatkan data payout",
-        data: result,
+        ...result,
       });
     } catch (error: any) {
       next(error);

@@ -384,7 +384,6 @@ const getDetailOwnerKost = async (ownerId: string, kostId: string) => {
     };
     const averageRating = stats.total > 0 ? stats.sum / stats.total : null;
 
-    console.log(roomType);
     return {
       id: roomType._id,
       nama_tipe: roomType.name,
@@ -579,9 +578,9 @@ const updatePhotoKost = async (kostId: string) => {
   if (kost.progressStep < 5) {
     updatePayload.progressStep = 5;
   }
-  console.log(updatePayload);
+
   const updatedKost = await kostRepository.updateById(kostId, updatePayload);
-  console.log(updatedKost, "UPDATE");
+
   return {
     kostId: updatedKost?._id,
     progress_step: updatedKost?.progressStep,

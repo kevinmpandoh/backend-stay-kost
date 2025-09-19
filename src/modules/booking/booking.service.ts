@@ -135,8 +135,6 @@ export const BookingService = {
       throw new ResponseError(404, "Booking not found");
     }
 
-    console.log(payload, bookingId);
-
     await bookingRepository.updateById(bookingId, payload);
 
     return booking;
@@ -483,121 +481,30 @@ export const BookingService = {
   },
 
   async getAllBookingsAdmin({
-    status,
-    page,
-    limit,
-    search,
+    query,
   }: {
-    status: string;
-    limit: number;
-    page: number;
-    search: string;
-  }) {
-    const statusMap: Record<string, BookingStatus> = {
-      pending: BookingStatus.PENDING,
-      waiting_for_payment: BookingStatus.WAITING_FOR_PAYMENT,
-      waiting_for_checkin: BookingStatus.WAITING_FOR_CHECKIN,
-      completed: BookingStatus.COMPLETED,
-      rejected: BookingStatus.REJECTED,
-      cancelled: BookingStatus.CANCELLED,
-      expired: BookingStatus.EXPIRED,
+    query: {
+      status: string;
+
+      search: string;
+      sort: string;
+      page: number;
     };
+  }) {
+    console.log(query, "QUERY");
 
-    // Filter status
-    let statusFilter: any = {};
-    if (statusMap[status]) {
-      statusFilter = statusMap[status];
-    } else {
-      statusFilter = {
-        $in: [
-          BookingStatus.PENDING,
-          BookingStatus.WAITING_FOR_PAYMENT,
-          BookingStatus.WAITING_FOR_CHECKIN,
-          BookingStatus.COMPLETED,
-          BookingStatus.REJECTED,
-          BookingStatus.EXPIRED,
-        ],
-      };
-    }
+    const bookings = await bookingRepository.findBookingsWithFilters({
+      page: query.page,
+      limit: 10,
 
-    const matchStage: any = { status: statusFilter };
+      status: query.status,
 
-    // Pipeline dasar
-    const pipeline: any[] = [
-      { $match: matchStage },
-
-      // Join tenant
-      {
-        $lookup: {
-          from: "users",
-          localField: "tenant",
-          foreignField: "_id",
-          as: "tenant",
-        },
-      },
-      { $unwind: "$tenant" },
-
-      // Join roomType
-      {
-        $lookup: {
-          from: "roomtypes",
-          localField: "roomType",
-          foreignField: "_id",
-          as: "roomType",
-        },
-      },
-      { $unwind: "$roomType" },
-
-      // Join kost
-      {
-        $lookup: {
-          from: "kosts",
-          localField: "kost",
-          foreignField: "_id",
-          as: "kost",
-        },
-      },
-      { $unwind: "$kost" },
-
-      // Join Foto Kamar
-      {
-        $lookup: {
-          from: "photorooms",
-          localField: "roomType.photos",
-          foreignField: "_id",
-          as: "photoRoom",
-        },
-      },
-    ];
-
-    // Tambahin search kalau ada
-    if (search) {
-      pipeline.push({
-        $match: {
-          $or: [
-            { "tenant.name": { $regex: search, $options: "i" } },
-            { "kost.name": { $regex: search, $options: "i" } },
-            { "roomType.name": { $regex: search, $options: "i" } },
-          ],
-        },
-      });
-    }
-
-    // Hitung total data dulu
-    const countPipeline = [...pipeline, { $count: "total" }];
-    const countResult = await Booking.aggregate(countPipeline);
-    const total = countResult.length > 0 ? countResult[0].total : 0;
-
-    // Pagination
-    const skip = (page - 1) * limit;
-    pipeline.push({ $sort: { dueDate: 1 } });
-    pipeline.push({ $skip: skip });
-    pipeline.push({ $limit: limit });
-
-    const bookings = await Booking.aggregate(pipeline);
+      search: query.search,
+      // sort: query.sort || "-createdAt",
+    });
 
     // Format hasil
-    const formatted = bookings.map((booking: any) => ({
+    const formatted = bookings.docs.map((booking: any) => ({
       id: booking._id,
       kost: {
         kostId: booking.kost._id,
@@ -620,13 +527,17 @@ export const BookingService = {
       totalPrice: booking.totalPrice,
     }));
 
+    console.log(bookings, formatted, "TES");
+
     return {
       data: formatted,
       pagination: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
+        total: bookings.totalDocs,
+        page: bookings.page,
+        limit: bookings.limit,
+        totalPages: bookings.totalPages,
+        hasNextPage: bookings.hasNextPage,
+        hasPrevPage: bookings.hasPrevPage,
       },
     };
   },
@@ -693,66 +604,37 @@ export const BookingService = {
     return formatted;
   },
 
-  async getAllBookingsOwner(ownerId: string, rawStatus: any) {
-    // Mapping nama status dari frontend ke backend
-    const statusMap: Record<string, BookingStatus> = {
-      pending: BookingStatus.PENDING,
-      waiting_for_payment: BookingStatus.WAITING_FOR_PAYMENT,
-      waiting_for_checkin: BookingStatus.WAITING_FOR_CHECKIN,
-      completed: BookingStatus.COMPLETED,
-      rejected: BookingStatus.REJECTED,
-      canclelled: BookingStatus.CANCELLED,
-      expired: BookingStatus.EXPIRED,
+  async getAllBookingsOwner({
+    ownerId,
+    query,
+  }: {
+    ownerId: string;
+    query: {
+      status: string;
+      kostId: string;
+      search: string;
+      sort: string;
+      page: number;
     };
+  }) {
+    const bookings = await bookingRepository.findBookingsWithFilters({
+      page: query.page,
+      limit: 10,
+      ownerId: ownerId,
+      status: query.status,
+      kostId: query.kostId,
+      search: query.search,
+      // sort: query.sort || "-createdAt",
+    });
 
-    let statusFilter: any = {};
-
-    if (statusMap[rawStatus]) {
-      statusFilter = statusMap[rawStatus];
-    } else {
-      statusFilter = {
-        $in: [
-          BookingStatus.PENDING,
-          BookingStatus.WAITING_FOR_PAYMENT,
-          BookingStatus.WAITING_FOR_CHECKIN,
-          BookingStatus.COMPLETED,
-          BookingStatus.REJECTED,
-          BookingStatus.EXPIRED,
-        ],
-      };
-    }
-
-    const bookings = await bookingRepository.findAll(
-      {
-        owner: ownerId,
-        status: statusFilter,
-      },
-      {},
-      [
-        {
-          path: "roomType",
-          select: "name",
-          populate: [
-            {
-              path: "kost",
-              select: "name type",
-              populate: { path: "address", select: "city district" },
-            },
-            { path: "photos", select: "url" },
-          ],
-        },
-        { path: "tenant", select: "name foto_profile" },
-      ]
-    );
-
-    const formatted = bookings.map((booking: any) => {
+    const formatted = bookings.docs.map((booking: any) => {
       const roomType = booking.roomType;
-      const kost = roomType.kost;
+      const kost = booking.kost;
 
       return {
         id: booking._id,
         kost: {
-          kostId: kost._id,
+          kostId: booking.kost._id,
           roomTypeId: roomType._id,
           fotoKamar: roomType.photos?.[0].url || null, // Ambil 1 foto saja
           namaKost: `${kost?.name} ${roomType?.name}`,
@@ -775,8 +657,17 @@ export const BookingService = {
         harga: booking.totalPrice,
       };
     });
-
-    return formatted;
+    return {
+      data: formatted,
+      pagination: {
+        total: bookings.totalDocs,
+        page: bookings.page,
+        limit: bookings.limit,
+        totalPages: bookings.totalPages,
+        hasNextPage: bookings.hasNextPage,
+        hasPrevPage: bookings.hasPrevPage,
+      },
+    };
   },
 
   async getBookingHistoryTenant(tenantId: string) {
@@ -968,7 +859,7 @@ export const BookingService = {
       const roomType = booking.roomType;
       const tenant = booking.tenant;
       const kost = roomType.kost;
-      console.log(tenant, "TENANT");
+
       return {
         id: booking._id,
         tenant: {

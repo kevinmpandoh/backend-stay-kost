@@ -12,7 +12,6 @@ const rulesData = [
   { name: "Dilarang membawa tamu" },
   { name: "Dilarang mengganggu penghuni lain" },
   { name: "Dilarang berisik" },
-  { name: "Dilarang menggunakan listrik berlebihan" },
   { name: "Dilarang berisik setelah jam 10 malam" },
 
   // Lainnya
@@ -25,7 +24,6 @@ const rulesData = [
   { name: "Tamu menginap dikenakan biaya" },
   { name: "Gunakan listrik dan air dengan bijak" },
   { name: "Buang sampah pada tempatnya" },
-  { name: "Wajib sertakan KTP saat pengajuan sewa " },
 ];
 
 export default rulesData;

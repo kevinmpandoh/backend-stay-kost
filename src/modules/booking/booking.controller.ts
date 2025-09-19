@@ -52,12 +52,8 @@ export const bookingController = {
 
   async getAllBookingAdmin(req: Request, res: Response, next: NextFunction) {
     try {
-      const { page, limit, search, status } = req.query;
       const result = await BookingService.getAllBookingsAdmin({
-        page: parseInt(page as string) || 1,
-        limit: parseInt(limit as string) || 10,
-        search: search as string,
-        status: status as string,
+        query: req.validatedQuery,
       });
       res.status(200).json({ status: "success", ...result });
     } catch (error) {
@@ -227,11 +223,11 @@ export const bookingController = {
   async getAllBookingOwner(req: Request, res: Response, next: NextFunction) {
     try {
       const ownerId = req.user.id;
-      const { status } = req.query;
-      const bookings = await BookingService.getAllBookingsOwner(
+
+      const bookings = await BookingService.getAllBookingsOwner({
         ownerId,
-        status
-      );
+        query: req.validatedQuery,
+      });
       res.status(200).json({ status: "success", data: bookings });
     } catch (error) {
       next(error);

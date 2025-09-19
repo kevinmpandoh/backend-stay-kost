@@ -61,8 +61,6 @@ const updateProfile = async (userId: any, payload: any) => {
   if (payload.name) userUpdate.name = payload.name;
   if (payload.phone) userUpdate.phone = payload.phone;
 
-  console.log(user, payload, "TESTING");
-
   if (user.role === "tenant") {
     userUpdate.tenantProfile = {
       ...user.tenantProfile, // merge biar ga overwrite kosong
@@ -80,8 +78,6 @@ const updateProfile = async (userId: any, payload: any) => {
 
   const newUser = await userRepository.updateById(user.id, userUpdate);
   if (!newUser) throw new ResponseError(404, "User tidak ditemukan");
-
-  console.log(newUser, "NEW USER");
 
   return {
     id: newUser._id,

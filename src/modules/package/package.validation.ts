@@ -9,8 +9,8 @@ export const createPackageSchema = Joi.object({
 
   features: Joi.array().items(Joi.string()).default([]),
   maxKost: Joi.number().integer().min(1).allow(null).optional(),
+  maxRoomType: Joi.number().integer().min(1).allow(null).optional(),
   maxRoom: Joi.number().integer().min(1).allow(null).optional(),
-  prioritySupport: Joi.boolean().default(false),
 
   isActive: Joi.boolean().default(true),
 });
@@ -24,8 +24,8 @@ export const updatePackageSchema = Joi.object({
 
   features: Joi.array().items(Joi.string()).optional(),
   maxKost: Joi.number().integer().min(1).allow(null).optional(),
+  maxRoomType: Joi.number().integer().min(1).allow(null).optional(),
   maxRoom: Joi.number().integer().min(1).allow(null).optional(),
-  prioritySupport: Joi.boolean().optional(),
 
   isActive: Joi.boolean().optional(),
 });

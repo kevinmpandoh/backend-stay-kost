@@ -7,6 +7,7 @@ import { roomTypeRepository } from "../room-type/room-type.repository";
 import { ResponseError } from "@/utils/response-error.utils";
 import { BookingStatus } from "../booking/booking.types";
 import { Review } from "./review.model";
+import dayjs from "dayjs";
 
 export const ReviewService = {
   async createReview(
@@ -154,77 +155,44 @@ export const ReviewService = {
     };
   },
 
-  async getAllReviews(req: any) {
-    const { page = 1, limit = 10, search = "", rating } = req.query;
-
-    const pageNum = parseInt(page as string);
-    const limitNum = parseInt(limit as string);
-    const skip = (pageNum - 1) * limitNum;
-
-    // const pageNumber = parseInt(page);
-    // const pageSize = parseInt(limit);
-
-    // Ambil semua kost_type milik pemilik ini
-    const kosts = await kostRepository.findAll();
-    const roomTypeIds = kosts.flatMap((kost: any) => kost.roomTypes);
-
-    // Buat query filter
-    const query: any = { roomType: { $in: roomTypeIds } };
-    if (search) {
-      query["$or"] = [
-        {
-          comment: { $regex: search, $options: "i" },
-        },
-      ];
-    }
-
-    if (rating) {
-      query.rating = parseInt(rating as string);
-    }
-
-    // Hitung total
-    const total = await Review.countDocuments(query);
-
+  async getAllReviews({
+    query,
+  }: {
+    query: {
+      rating: string;
+      search: string;
+      sort: string;
+      page: number;
+    };
+  }) {
     // Ambil data review dengan populate dan pagination
-    const reviews = await Review.find(query)
-      .skip(skip)
-      .limit(limitNum)
-      .sort({ createdAt: -1 })
-      .populate("tenant", "name")
-      .populate("roomType", "name")
-      .populate({
-        path: "booking",
-        select: "_id",
-        populate: {
-          path: "room",
-          select: "number floor",
-        },
-      });
-
-    const totalPages = Math.ceil(total / limitNum);
-
-    const formatted = reviews.map((review: any) => {
-      return {
-        id: review._id,
-        rating: review.rating,
-        comment: review.comment,
-        reply: review.reply,
-        tenantName: review.tenant.name,
-        roomType: review.roomType.name,
-        room: review.booking.room.number,
-        createdAt: review.createdAt,
-      };
+    const reviews = await reviewRepository.findReviewsWithFilters({
+      page: query.page || 1,
+      limit: 10,
+      rating: query.rating,
+      search: query.search,
+      sort: query.sort || "-createdAt",
     });
+    const formatted = reviews.docs.map((review: any) => ({
+      id: review._id,
+      rating: review.rating,
+      comment: review.comment,
+      reply: review.reply,
+      tenantName: review.tenant?.name,
+      roomType: review.roomType?.name,
+      room: review.room?.number || null,
+      createdAt: dayjs(review.createdAt).format("D MMMM YYYY"),
+    }));
 
     return {
       data: formatted,
       pagination: {
-        total,
-        page: pageNum,
-        limit: limitNum,
-        totalPages,
-        hasNextPage: pageNum < totalPages,
-        hasPrevPage: pageNum > 1,
+        total: reviews.totalDocs,
+        page: reviews.page,
+        limit: reviews.limit,
+        totalPages: reviews.totalPages,
+        hasNextPage: reviews.hasNextPage,
+        hasPrevPage: reviews.hasPrevPage,
       },
     };
   },

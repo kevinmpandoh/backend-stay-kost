@@ -14,20 +14,26 @@ export const seedPackages = async () => {
       {
         name: "Free",
         description: "Paket gratis dengan fitur dasar",
+        type: "free",
         durations: [
           {
             duration: 0,
             price: 0,
           },
         ],
-        features: ["Maksimal 1 Kost", "Maksimal 1 Kamar"],
+        features: [
+          "Maksimal 1 Kost",
+          "Maksimal 2 Tipe Kamar per kost",
+          "Maksimal 4 Kamar per tipe kost",
+        ],
         maxKost: 1,
-        maxRoom: 1,
-        prioritySupport: false,
+        maxRoomType: 2,
+        maxRoom: 4,
         isActive: true,
       },
       {
         name: "Pro",
+        type: "pro",
         description:
           "Paket menengah untuk pemilik kost dengan lebih banyak kamar",
         durations: [
@@ -36,14 +42,20 @@ export const seedPackages = async () => {
           { duration: 6, price: 249000, discount: "15%", oldPrice: 294000 },
           { duration: 12, price: 470000, discount: "20%", oldPrice: 588000 },
         ],
-        features: ["Maksimal 5 Kost", "Maksimal 50 Kamar", "Prioritas Support"],
+        features: [
+          "Maksimal 5 Kost",
+          "Maksimal 3 Tipe Kamar per kost",
+          "Maksimal 10 Kamar per tipe kost",
+          "Prioritas Support",
+        ],
         maxKost: 2,
+        maxRoomType: 4,
         maxRoom: 10,
-        prioritySupport: true,
         isActive: true,
       },
       {
         name: "Premium",
+        type: "premium",
         description: "Paket premium untuk pemilik kost skala besar",
         durations: [
           { duration: 1, price: 99000 },
@@ -53,13 +65,13 @@ export const seedPackages = async () => {
         ],
         features: [
           "Unlimited Kost",
+          "Unlimited Kamar Tipe Kamar",
           "Unlimited Kamar",
-          "Prioritas Support",
           "Fitur tambahan khusus",
         ],
         maxKost: null, // null = unlimited
+        maxRoomType: null,
         maxRoom: null,
-        prioritySupport: true,
         isActive: true,
       },
     ];

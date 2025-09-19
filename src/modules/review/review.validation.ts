@@ -8,3 +8,9 @@ export const createReviewSchema = Joi.object({
 export const createReplyReviewSchema = Joi.object({
   message: Joi.string().min(5).max(500).required(),
 });
+
+export const queryFilterReviewSchema = Joi.object({
+  page: Joi.number().integer().min(1).default(1).optional(),
+  search: Joi.string().allow("").trim().optional(),
+  rating: Joi.number().integer().min(1).max(5).optional(),
+});
