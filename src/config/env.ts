@@ -27,7 +27,7 @@ export const env = {
   JWT_ACCESS_EXPIRE: process.env.JWT_ACCESS_EXPIRE || "15m",
   JWT_REFRESH_EXPIRE: process.env.JWT_REFRESH_EXPIRE || "7d",
 
-  EMAIL_FROM: process.env.EMAIL_FROM || process.env.SMTP_USER,
+  EMAIL_FROM: process.env.EMAIL_FROM || "noreply@staykost.my.id",
   SMTP_HOST: process.env.SMTP_HOST,
   SMTP_PORT: Number(process.env.SMTP_PORT) || 587,
   SMTP_SECURE: process.env.SMTP_SECURE,

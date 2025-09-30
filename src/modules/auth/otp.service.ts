@@ -1,12 +1,8 @@
-import { sendMail, transporter } from "@/config/mailer";
+import { sendMail } from "@/config/mailer";
 import { redis } from "@/config/redis";
 import { generateOtp, OTP_COOLDOWN, OTP_TTL } from "@/utils/otp";
 import { otpTemplate } from "@/utils/email-template";
 import { ResponseError } from "@/utils/response-error.utils";
-// import { sendEmail } from "../../utils/sendEmail";
-
-// Struktur data sementara disimpan di Redis sebagai JSON string
-// key: reg:otp:<email>
 
 // keys action
 const enum K {
