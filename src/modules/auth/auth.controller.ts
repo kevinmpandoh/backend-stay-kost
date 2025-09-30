@@ -51,6 +51,7 @@ export async function verifyOtp(
 export async function login(req: Request, res: Response, next: NextFunction) {
   try {
     const result = await service.login(req.body);
+    console.log(result, "RESULTNYA");
     setAuthCookies(res, result.accessToken, result.refreshToken);
     res.json({
       accessToken: result.accessToken,
