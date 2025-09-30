@@ -60,7 +60,7 @@ export const updateRoomTypeFacilitiesSchema = Joi.object({
 });
 
 export const updatePriceSchema = Joi.object({
-  price: Joi.number().min(50000).max(15000000).required(),
+  price: Joi.number().min(10000).max(15000000).required(),
 });
 
 export const roomTypeFilterSchema = Joi.object({
