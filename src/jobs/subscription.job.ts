@@ -1,10 +1,8 @@
 import { agenda } from "@/config/agenda";
-import { Subscription } from "../modules/subscription/subscription.model";
 import { subscriptionRepository } from "@/modules/subscription/subscription.repository";
 import { subscriptionService } from "@/modules/subscription/subscription.service";
 import dayjs from "dayjs";
 import { notificationService } from "@/modules/notification/notification.service";
-import { role } from "@/middlewares/auth.middleware";
 
 // Job untuk cek expired subscription
 agenda.define("check-subscription-expired", async () => {

@@ -3,6 +3,10 @@
 import { User } from "@/modules/user/user.model";
 import bcrypt from "bcryptjs";
 
+import { Package } from "@/modules/package/package.model";
+
+import { Subscription } from "@/modules/subscription/subscription.model";
+
 const userSeeder = async () => {
   try {
     const deleteResult = await User.deleteMany();
@@ -55,6 +59,33 @@ const userSeeder = async () => {
     ]);
 
     // Menambahkan data user baru ke database
+    const freePackage = await Package.findOne({ type: "free" });
+
+    if (!freePackage) {
+      throw new Error("Free package not found, seed packages first!");
+    }
+
+    const owners = await User.find({ role: "owner" });
+
+    const subscriptions = owners.map((owner) => ({
+      owner: owner._id,
+
+      package: freePackage._id,
+
+      status: "active",
+
+      duration: 0,
+
+      startDate: new Date(),
+
+      endDate: null,
+    }));
+
+    console.log("Tenant seeder completed successfully");
+
+    await Subscription.insertMany(subscriptions);
+
+    console.log("Free subscriptions assigned to all owners!");
 
     console.log("Tenant seeder completed successfully");
   } catch (error) {

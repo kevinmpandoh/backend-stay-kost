@@ -10,7 +10,7 @@ import { startJobs } from "./jobs";
 const port = env.PORT || 8000;
 
 async function start() {
-  await connectDB(env.MONGO_URI);
+  await connectDB(env.MONGO_URI!);
   server.listen(port, () => logger.info(`Server running on port ${port}`));
   (async () => {
     await startJobs();

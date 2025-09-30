@@ -10,7 +10,7 @@ router.use(auth, role(["owner", "tenant"]));
 
 router.get("/", bookingController.getAllBookingOwner);
 router.get("/active", bookingController.getAllActiveBookingOwner);
-router.get("/:bookingId", bookingController.getDetailBookingOwner);
+router.get("/:bookingId", bookingController.getDetailBooking);
 router.patch("/:bookingId/approve", bookingController.approve);
 router.patch(
   "/:bookingId/reject",

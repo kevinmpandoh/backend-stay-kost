@@ -109,8 +109,7 @@ export const googleCallbackRedirect = [
       );
 
       setAuthCookies(res, accessToken, refreshToken);
-
-      res.redirect(`${env.FRONTEND_URL}/`);
+      res.redirect(`${env.FRONTEND_URL}/callback?login=google`);
     } catch (err) {
       // kalau error, redirect ke halaman login dengan query error
       console.error(err);

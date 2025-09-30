@@ -63,8 +63,12 @@ const getAll = async (query: any) => {
       const reviews = roomTypes.reviews ?? [];
       const averageRating =
         reviews.length > 0
-          ? reviews.reduce((sum: number, r: any) => sum + r.rating, 0) /
-            reviews.length
+          ? parseFloat(
+              (
+                reviews.reduce((sum: number, r: any) => sum + r.rating, 0) /
+                reviews.length
+              ).toFixed(2)
+            )
           : 0;
 
       // ✅ Hitung total transaksi
@@ -196,8 +200,12 @@ const getDetailKostPublic = async (roomTypeId: string) => {
 
   const averageRating =
     reviews.length > 0
-      ? reviews.reduce((sum: number, r: any) => sum + r.rating, 0) /
-        reviews.length
+      ? parseFloat(
+          (
+            reviews.reduce((sum: number, r: any) => sum + r.rating, 0) /
+            reviews.length
+          ).toFixed(2)
+        )
       : 0;
 
   return {

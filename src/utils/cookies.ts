@@ -11,7 +11,7 @@ export function setAuthCookies(
     // secure: true,
     sameSite: "none" as const,
     secure: env.COOKIE_SECURE,
-    domain: env.COOKIE_DOMAIN,
+    // domain: env.COOKIE_DOMAIN,
   };
   res.cookie("accessToken", accessToken, {
     ...common,
