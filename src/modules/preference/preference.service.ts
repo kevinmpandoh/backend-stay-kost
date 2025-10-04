@@ -6,6 +6,7 @@ import {
   getCosineSimilarity,
   getDistanceInMeters,
   getHaversineScore,
+  getPriceCategoryScore,
   getPriceScore,
   getTfIdfVectors,
 } from "@/utils/contentBasedFiltering";
@@ -28,9 +29,9 @@ export const PreferenceService = {
         tenant: tenantId,
       },
       [
-        {
-          path: "rules",
-        },
+        // {
+        //   path: "rules",
+        // },
         {
           path: "roomFacilities",
         },
@@ -48,7 +49,7 @@ export const PreferenceService = {
       kostFacilities: preference.kostFacilities.map((f: any) => f._id),
       roomFacilities: preference.roomFacilities.map((f: any) => f._id),
       kostType: preference.kostType,
-      rules: preference.rules.map((k: any) => k._id),
+      // rules: preference.rules.map((k: any) => k._id),
     };
   },
 
@@ -60,9 +61,9 @@ export const PreferenceService = {
       {
         path: "roomFacilities",
       },
-      {
-        path: "rules",
-      },
+      // {
+      //   path: "rules",
+      // },
     ]);
     const roomTypes = (await roomTypeRepository.findAll(
       {
@@ -88,9 +89,9 @@ export const PreferenceService = {
             {
               path: "photos",
             },
-            {
-              path: "rules",
-            },
+            // {
+            //   path: "rules",
+            // },
           ],
         },
       ]
@@ -100,30 +101,31 @@ export const PreferenceService = {
     const normalize = (name: string) =>
       name.trim().toLowerCase().replace(/\s+/g, "_");
 
+    // Gabung fasilitas preferensi
     const userFacilities = [...pref.kostFacilities, ...pref.roomFacilities].map(
       (facility: any) => normalize(facility.name)
     );
 
-    const userRules = (pref.rules || []).map((k: any) => k.name).join(" ");
+    // const userRules = (pref.rules || []).map((k: any) => k.name).join(" ");
 
     // Buat dokumen TF-IDF untuk semua kostType
     const facilityDocs: string[][] = roomTypes.map((kt: any) => {
       const kostFacilities = (kt.kost?.facilities || []).map(
-        (facility: IFacility) => facility.name
+        (facility: IFacility) => normalize(facility.name)
       );
-      const roomFacilities = (kt.facilities || []).map(
-        (f: IFacility) => f.name
+      const roomFacilities = (kt.facilities || []).map((f: IFacility) =>
+        normalize(f.name)
       );
       const all = [...kostFacilities, ...roomFacilities].map(normalize);
       return Array.from(new Set(all)); // remove duplikat
     });
-    const ruleDocs = roomTypes.map((roomType: any) =>
-      (roomType.kost?.rules || []).map((rule: IRule) => rule.name).join(" ")
-    );
+    // const ruleDocs = roomTypes.map((roomType: any) =>
+    //   (roomType.kost?.rules || []).map((rule: IRule) => rule.name).join(" ")
+    // );
 
     const tfidfFacilities = getTfIdfVectors([userFacilities, ...facilityDocs]);
 
-    const tfidfRules = getTfIdfVectors([userRules, ...ruleDocs]);
+    // const tfidfRules = getTfIdfVectors([userRules, ...ruleDocs]);
 
     const result = roomTypes.map((roomType: any, i: number) => {
       const kost = roomType.kost;
@@ -141,21 +143,21 @@ export const PreferenceService = {
       // Harga
       const price = roomType.price || 0;
 
-      const priceScore = getPriceScore(price, pref.price.min, pref.price.max);
+      const priceScore = getPriceCategoryScore(price, pref.price.max);
 
       // Jenis Kost
       const kostTypeScore = kost.type === pref.kostType ? 1 : 0;
 
       const facilityScore = getCosineSimilarity(tfidfFacilities, i + 1);
 
-      const ruleScore = getCosineSimilarity(tfidfRules, i + 1);
+      // const ruleScore = getCosineSimilarity(tfidfRules, i + 1);
 
       // Final Score (berdasarkan bobot)
       const finalScore =
-        locationScore * 0.35 +
-        priceScore * 0.25 +
-        facilityScore * 0.15 +
-        ruleScore * 0.15 +
+        locationScore * 0.4 +
+        priceScore * 0.3 +
+        facilityScore * 0.2 +
+        // ruleScore * 0.15 +
         kostTypeScore * 0.1;
 
       // Ambil fasilitas gabungan (nama)

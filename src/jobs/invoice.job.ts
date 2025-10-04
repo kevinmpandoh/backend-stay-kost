@@ -1,6 +1,7 @@
 import { agenda } from "@/config/agenda";
 import { Invoice } from "../modules/invoice/invoice.model";
 import { Job, JobAttributesData } from "agenda";
+import { notificationService } from "@/modules/notification/notification.service";
 
 interface CancelInvoice extends JobAttributesData {
   invoiceId: string; // app-specific type
@@ -59,4 +60,64 @@ agenda.define("mark-overdue-booking-invoices", async () => {
   );
 
   console.log(`⚠️ Overdue booking invoices updated: ${result.modifiedCount}`);
+});
+
+agenda.define("reminder-tenant-invoice", async () => {
+  console.log("⏰ [AGENDA] Running job: reminder-tenant-invoice");
+
+  const now = new Date();
+
+  // Cari invoice tenant yang unpaid dan akan jatuh tempo dalam 3 hari
+  const soonDueInvoices = (await Invoice.find({
+    type: "tenant",
+    status: "unpaid",
+    dueDate: {
+      $gte: now, // belum jatuh tempo
+      $lte: new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000), // dalam 3 hari ke depan
+    },
+  }).populate("user")) as any; // asumsikan ada relasi tenant
+
+  for (const inv of soonDueInvoices) {
+    const dueDateStr = inv.dueDate.toLocaleDateString("id-ID");
+    console.log(
+      `📢 Reminder: Invoice ${inv._id} akan jatuh tempo pada ${inv.dueDate}`
+    );
+    await notificationService.sendNotification(
+      soonDueInvoices.user._id,
+      "tenant",
+      "payment",
+      `Tagihan Anda akan jatuh tempo pada ${dueDateStr}`,
+      "Pengingat Pembayaran",
+      {
+        invoiceId: inv._id,
+        dueDate: inv.dueDate,
+        amount: inv.amount,
+      }
+    );
+  }
+
+  // Cari invoice tenant yang sudah jatuh tempo
+  const overdueInvoices = (await Invoice.find({
+    type: "tenant",
+    status: "unpaid",
+    dueDate: { $lt: now },
+  }).populate("user")) as any;
+
+  for (const inv of overdueInvoices) {
+    console.log(`📢 Reminder: Invoice ${inv._id} sudah jatuh tempo!`);
+    // TODO: kirim notifikasi ke tenant
+
+    await notificationService.sendNotification(
+      inv.user._id.toString(),
+      "tenant",
+      "payment",
+      `Tagihan Anda dengan nomor ${inv._id} sudah jatuh tempo.`,
+      "Pembayaran Terlambat",
+      {
+        invoiceId: inv._id,
+        dueDate: inv.dueDate,
+        amount: inv.amount,
+      }
+    );
+  }
 });

@@ -8,15 +8,16 @@ export const preferenceSchema = Joi.object({
       lng: Joi.number().required(),
     }),
   }).required(),
-  price: Joi.object({
-    min: Joi.number().required().min(0),
-    max: Joi.number().required().greater(Joi.ref("min")),
-  }).required(),
+  price: Joi.number().required().min(0).required(),
+  // price: Joi.object({
+  //   min: Joi.number().required().min(0),
+  //   max: Joi.number().required().greater(Joi.ref("min")),
+  // }).required(),
 
   kostType: Joi.string()
     .valid(KostType.PUTRA, KostType.PUTRI, KostType.CAMPUR)
     .required(),
   kostFacilities: Joi.array().items(Joi.string().hex().length(24)).required(),
   roomFacilities: Joi.array().items(Joi.string().hex().length(24)).required(),
-  rules: Joi.array().items(Joi.string().hex().length(24)).required(),
+  // rules: Joi.array().items(Joi.string().hex().length(24)).required(),
 });

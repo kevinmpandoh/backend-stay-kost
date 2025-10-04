@@ -9,6 +9,7 @@ export function setAuthCookies(
   const common = {
     httpOnly: true as const,
     secure: true,
+    // secure: env.NODE_ENV !== "development" ? true : false,
     sameSite: "none" as const,
     // domain: env.COOKIE_DOMAIN,
   };

@@ -64,3 +64,17 @@ export const getPriceScore = (
   if (harga >= max) return 0;
   return 1 - (harga - min) / (max - min);
 };
+
+export const getPriceCategoryScore = (
+  harga: number,
+  prefPrice: number
+): number => {
+  const selisih = Math.abs(harga - prefPrice);
+
+  if (selisih === 0) return 1.0;
+  if (selisih <= 50000) return 0.8;
+  if (selisih <= 150000) return 0.6;
+  if (selisih <= 300000) return 0.4;
+  if (selisih <= 500000) return 0.2;
+  return 0.0;
+};

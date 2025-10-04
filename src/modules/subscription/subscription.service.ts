@@ -112,11 +112,11 @@ class SubscriptionService {
           ? dayjs(subscription?.endDate).format("D MMMM YYYY")
           : "-",
         owner: {
-          id: owner._id,
-          name: owner.name,
-          phone: owner.phone,
-          email: owner.email,
-          photo: owner.avatarUrl,
+          id: owner?._id,
+          name: owner?.name,
+          phone: owner?.phone,
+          email: owner?.email,
+          photo: owner?.avatarUrl,
         },
         package: packageOwner
           ? {

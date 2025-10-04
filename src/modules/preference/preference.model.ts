@@ -34,10 +34,11 @@ const PreferenceSchema: Schema = new Schema<IPreference>(
         lng: { type: Number },
       },
     },
-    price: {
-      min: { type: Number, required: true },
-      max: { type: Number, required: true },
-    },
+    price: { type: Number, required: true },
+    // price: {
+    //   min: { type: Number, required: true },
+    //   max: { type: Number, required: true },
+    // },
     kostType: {
       type: String,
       enum: Object.values(KostType),
@@ -45,7 +46,7 @@ const PreferenceSchema: Schema = new Schema<IPreference>(
     },
     kostFacilities: [{ type: mongoose.Schema.Types.ObjectId, ref: "Facility" }],
     roomFacilities: [{ type: mongoose.Schema.Types.ObjectId, ref: "Facility" }],
-    rules: [{ type: mongoose.Schema.Types.ObjectId, ref: "Rule" }],
+    // rules: [{ type: mongoose.Schema.Types.ObjectId, ref: "Rule" }],
   },
   { timestamps: true }
 );
