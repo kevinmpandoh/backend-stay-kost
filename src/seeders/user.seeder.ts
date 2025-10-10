@@ -31,7 +31,7 @@ const userSeeder = async () => {
       },
       {
         name: "Mesiasi Supit",
-        email: "sashi@test.com",
+        email: "sashi@gmail.com",
         phone: "08123467123",
         password: await bcrypt.hash("password", 10),
         role: "owner",

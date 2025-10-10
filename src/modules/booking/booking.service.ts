@@ -811,6 +811,7 @@ export const BookingService = {
         const daysLate = isLate ? now.diff(dueDate, "day") : 0;
         return {
           id: invoice._id,
+          kostName: `${kost?.name} - ${roomType.name}`,
           invoiceNumber: invoice.invoiceNumber,
           amount: invoice.amount,
           dueDate: dayjs(invoice.dueDate).format("D MMMM YYYY"),

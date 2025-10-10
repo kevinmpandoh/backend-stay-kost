@@ -35,6 +35,10 @@ const getAll = async (query: any) => {
   const data = await Promise.all(
     result.docs.map(async (kost: any) => {
       const roomTypes = kost.roomTypes;
+      const allFacilities = [
+        ...kost.facilities.map((f: any) => f.name),
+        ...roomTypes.facilities.map((f: any) => f.name),
+      ];
 
       // urutkan foto
       const sortedTypePhotos = [...roomTypes.photos].sort((a: any, b: any) => {
@@ -83,7 +87,7 @@ const getAll = async (query: any) => {
         address: `${kost.address.district}, ${kost.address.city}`,
         type: kost.type,
         price: roomTypes.price,
-        facilities: roomTypes.facilities.map((f: any) => f.name),
+        facilities: allFacilities,
         photos: allPhotos,
         availableRooms,
         rating: averageRating,

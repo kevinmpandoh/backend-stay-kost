@@ -112,7 +112,7 @@ const createPayout = async ({
       const response = await payoutCreator.createPayouts({
         payouts: [
           {
-            amount: 1,
+            amount: env.NODE_ENV === "production" ? netAmount : 1000, // untuk testing di sandbox, pakai 1000
             notes: `Payout for invoice ${invoice._id}`,
             beneficiary_name: owner.bank.accountName,
             beneficiary_account: owner.bank.accountNumber,

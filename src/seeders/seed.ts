@@ -30,14 +30,14 @@ export const main = async () => {
     await userSeeder();
     await seedFacilities(); // Seed fasilitas
     await seedRules(); // Seed peraturan
-    // await seedKosts();
+    await seedKosts();
     // await seedRoomTypes();
     // await seedPhotoKosts(); // Seed foto kost
     // await seedPhotoRooms(); // Seed foto tipe kost
     // await seedKostTypeFacilities();
     // await seedRooms();
-    // await seedFinishedBookingsPerKostType();
-    // await seedReviews();
+    await seedFinishedBookingsPerKostType();
+    await seedReviews();
   } catch (error) {
     console.error("Error connecting to MongoDB:", error);
   } finally {
