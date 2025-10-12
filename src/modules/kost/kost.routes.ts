@@ -6,6 +6,7 @@ import { auth, role } from "@/middlewares/auth.middleware";
 import {
   createKostSchema,
   kostFilterSchema,
+  kostQueryFilterSchema,
   rejectKostSchema,
   updateAddressKostSchema,
   updateFacilityKostSchema,
@@ -61,7 +62,8 @@ router.delete("/:kostId", auth, kostController.deleteKost);
 // Admin
 router.get(
   "/",
-  kostController.listAllPending // lihat semua kost pending
+
+  kostController.getAll // lihat semua kost pending
 );
 router.patch("/:kostId/approve", kostController.approve);
 router.patch(

@@ -1,5 +1,5 @@
 import { BaseRepository } from "../../core/base.repository";
-import { IOwner, Owner } from "../owner/owner.model";
+// import { IOwner, Owner } from "../owner/owner.model";
 import { ITenant, Tenant } from "./tenant.model";
 import { IUser, User } from "./user.model";
 
@@ -21,22 +21,22 @@ export class UserRepository extends BaseRepository<IUser> {
   }
 
   // Owner
-  async createOwnerProfile(data: Partial<IOwner>) {
-    return await Owner.create(data);
-  }
-  async updateOwnerProfile(userId: string, data: Partial<IOwner>) {
-    return await Owner.findOneAndUpdate({ user: userId }, data, { new: true });
-  }
+  // async createOwnerProfile(data: Partial<IOwner>) {
+  //   return await Owner.create(data);
+  // }
+  // async updateOwnerProfile(userId: string, data: Partial<IOwner>) {
+  //   return await Owner.findOneAndUpdate({ user: userId }, data, { new: true });
+  // }
 
-  async findBankAccountOwner(ownerId: string) {
-    return await Owner.findOne({
-      user: ownerId,
-    });
-  }
+  // async findBankAccountOwner(ownerId: string) {
+  //   return await Owner.findOne({
+  //     user: ownerId,
+  //   });
+  // }
 
-  async findOwnerByUser(userId: string) {
-    return await Owner.findOne({ user: userId });
-  }
+  // async findOwnerByUser(userId: string) {
+  //   return await Owner.findOne({ user: userId });
+  // }
 }
 
 export const userRepository = new UserRepository();

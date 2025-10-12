@@ -40,6 +40,5 @@ router.get("/tenants/:id", userController.getTenantById);
 
 // Owner management
 router.get("/owners", userController.getAllOwners);
-router.get("/owners/:id", userController.getOwnerById);
 
 export default router;

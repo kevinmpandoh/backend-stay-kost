@@ -3,14 +3,15 @@ import kostController from "../kost.controller";
 import { validate } from "@/middlewares/validate.middleware";
 
 import { auth, role } from "@/middlewares/auth.middleware";
-import { rejectKostSchema } from "../kost.validation";
+import { kostQueryFilterSchema, rejectKostSchema } from "../kost.validation";
 
 const router = Router();
 router.use(auth, role(["admin", "owner"]));
 
 router.get(
   "/",
-  kostController.listAllPending // lihat semua kost pending
+  validate(kostQueryFilterSchema, "query"),
+  kostController.getAll // lihat semua kost pending
 );
 router.get(
   "/:kostId",

@@ -98,32 +98,32 @@ const updateProfile = async (userId: any, payload: any) => {
   };
 };
 
-const updateProfilePhoto = async (userId: string, photoUrl: string) => {
-  return await userRepository.updateById(userId, { profilePhoto: photoUrl });
-};
+// const updateProfilePhoto = async (userId: string, photoUrl: string) => {
+//   return await userRepository.updateById(userId, { profilePhoto: photoUrl });
+// };
 
-const getOwnerBankAccount = async (userId: string) => {
-  const owner = await userRepository.findOwnerByUser(userId);
-  if (!owner) throw new Error("Owner profile not found");
+// const getOwnerBankAccount = async (userId: string) => {
+//   const owner = await userRepository.findOwnerByUser(userId);
+//   if (!owner) throw new Error("Owner profile not found");
 
-  return {
-    bankAccount: owner.bankAccount,
-    bankName: owner.bankName,
-  };
-};
+//   return {
+//     bankAccount: owner.bankAccount,
+//     bankName: owner.bankName,
+//   };
+// };
 
-const updateOwnerBankAccount = async (userId: string, payload: any) => {
-  const owner = await userRepository.updateOwnerProfile(userId, {
-    bankAccount: payload.bankAccount,
-    bankName: payload.bankName,
-  });
+// const updateOwnerBankAccount = async (userId: string, payload: any) => {
+//   const owner = await userRepository.updateOwnerProfile(userId, {
+//     bankAccount: payload.bankAccount,
+//     bankName: payload.bankName,
+//   });
 
-  return {
-    message: "Bank account updated successfully",
-    bankAccount: owner?.bankAccount,
-    bankName: owner?.bankName,
-  };
-};
+//   return {
+//     message: "Bank account updated successfully",
+//     bankAccount: owner?.bankAccount,
+//     bankName: owner?.bankName,
+//   };
+// };
 
 const getAllTenants = async () => {
   return userRepository.findAll({ role: "tenant" });
@@ -135,10 +135,6 @@ const getTenantById = async (id: string) => {
 
 const getAllOwners = async () => {
   return userRepository.findAll({ role: "owner" });
-};
-
-const getOwnerById = async (id: string) => {
-  return userRepository.findOwnerByUser(id);
 };
 
 const uploadProfile = async (userId: string, file: Express.Multer.File) => {
@@ -287,7 +283,6 @@ export default {
   updateProfile,
   getAllOwners,
   getAllTenants,
-  getOwnerById,
   getTenantById,
   uploadProfile,
   getAvailableBanks,

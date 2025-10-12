@@ -1,5 +1,5 @@
 import Joi from "joi";
-import { KostType } from "./kost.type";
+import { KostStatus, KostType } from "./kost.type";
 
 export const createKostSchema = Joi.object({
   name: Joi.string().required(),
@@ -34,6 +34,27 @@ export const kostFilterSchema = Joi.object({
     .optional(),
 
   rating: Joi.number().min(0).max(5).optional(),
+});
+
+export const kostQueryFilterSchema = Joi.object({
+  page: Joi.number().integer().min(1).default(1),
+  limit: Joi.number().integer().min(1).max(50).default(10),
+  search: Joi.string().allow("").trim().optional(),
+  status: Joi.string()
+    .valid(
+      KostStatus.PENDING,
+      KostStatus.APPROVED,
+      KostStatus.REJECTED,
+      KostStatus.DRAFT
+    )
+    .optional(),
+  city: Joi.string().allow("").trim().optional(),
+  type: Joi.string()
+    .valid(KostType.PUTRA, KostType.PUTRI, KostType.CAMPUR)
+    .optional(),
+  sort: Joi.string()
+    .valid("date_asc", "date_desc", "name_asc", "name_desc")
+    .optional(),
 });
 
 export const updateAddressKostSchema = Joi.object({

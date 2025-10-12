@@ -78,19 +78,6 @@ const getAllOwners = async (
   }
 };
 
-const getOwnerById = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    const owner = await userService.getOwnerById(req.params.id);
-    res.json(owner);
-  } catch (err) {
-    next(err);
-  }
-};
-
 const uploadProfile = async (
   req: Request,
   res: Response,
@@ -156,7 +143,6 @@ export default {
   getAllTenants,
   getTenantById,
   getAllOwners,
-  getOwnerById,
   uploadProfile,
   getAvailableBanks,
   addOrUpdateBankAccount,

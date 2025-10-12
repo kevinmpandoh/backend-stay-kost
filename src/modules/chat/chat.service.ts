@@ -181,7 +181,7 @@ export const chatService = {
         return {
           id: chat._id,
           kost: {
-            namaKost: `${chat.roomType.name} - ${chat.roomType.kost.name}`,
+            namaKost: `${chat.roomType.kost.name} - ${chat.roomType.name}`,
             fotoKost: chat.roomType.photos[0].url || null,
           },
           tenant: {

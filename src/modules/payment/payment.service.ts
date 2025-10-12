@@ -202,7 +202,30 @@ export class PaymentService {
           } berjumlah Rp${payment.amount.toLocaleString()} gagal dibayarkan`,
           "Payment Success"
         );
+      } else if (newStatus === PaymentStatus.FAILED) {
+        await notificationService.sendNotification(
+          payment.user._id,
+          payment.user.role === "owner" ? "owner" : "tenant",
+          "payment",
+          `Pembayaran dengan invoice ${
+            body.order_id
+          } berjumlah Rp${payment.amount.toLocaleString()} gagal dibayarkan`,
+          "Payment Failed"
+        );
+      } else if (newStatus === PaymentStatus.CANCELLED) {
+        // await notificationService.sendNotification(
+        //   payment.user._id,
+        //   payment.user.role === "owner" ? "owner" : "tenant",
+        //   "payment",
+        //   `Pembayaran dengan invoice ${
+        //     body.order_id
+        //   } berjumlah Rp${payment.amount.toLocaleString()} dibatalkan`,
+        //   "Payment Cancelled"
+        // );
+
+        return;
       }
+
       await payment.save();
     }
 

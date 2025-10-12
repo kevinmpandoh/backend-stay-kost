@@ -434,7 +434,7 @@ const kostData = [
     photos: [
       {
         category: PhotoCategory.STREET_VIEW,
-        url: "https://res.cloudinary.com/demo/image/upload/v17212345/street1.jpg",
+        url: "https://res.cloudinary.com/dcq397jrp/image/upload/v1760020344/IMG-20250930-WA0002_qmsbrc.jpg",
       },
       {
         category: PhotoCategory.FRONT_VIEW,

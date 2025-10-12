@@ -117,10 +117,14 @@ export default {
     }
   },
 
-  async listAllPending(req: Request, res: Response, next: NextFunction) {
+  async getAll(req: Request, res: Response, next: NextFunction) {
     try {
-      const kosts = await kostService.listAllPending();
-      res.status(200).json({ status: "success", data: kosts });
+      console.log(req.validatedQuery);
+      const kosts = await kostService.listAll({
+        query: req.validatedQuery,
+      });
+
+      res.status(200).json({ status: "success", ...kosts });
     } catch (error) {
       next(error);
     }

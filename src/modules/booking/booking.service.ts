@@ -580,6 +580,7 @@ export const BookingService = {
           );
           invoiceUnpaid = invoice?.invoiceNumber || null;
         }
+        console.log(booking.note, "TES");
         return {
           id: booking._id,
           kostId: roomType._id,
@@ -588,6 +589,7 @@ export const BookingService = {
           jenisKost: kost?.type,
           address: `${kost?.address?.city}, ${kost?.address?.district}`,
           tanggalMasuk: dayjs(booking.startDate).format("D MMMM YYYY"),
+          tanggalKelaur: dayjs(booking.endDate).format("D MMMM YYYY"),
           tanggalDiajukan: dayjs(booking.createdAt).format("D MMMM YYYY"),
           paymentDeadline: booking.paymentDeadline
             ? dayjs(booking.paymentDeadline).format("D MMMM YYYY HH:mm")
@@ -597,6 +599,7 @@ export const BookingService = {
           harga: booking.totalPrice,
           invoiceUnpaid, // tambahkan invoice di sini
           rejectReason: booking.rejectionReason || null,
+          note: booking.note || null,
         };
       })
     );

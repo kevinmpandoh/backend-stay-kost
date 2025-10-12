@@ -60,6 +60,136 @@ export class KostRepository extends BaseRepository<IKost> {
     return !!(await this.model.exists(filter));
   }
 
+  async findKostsWithFilters({
+    page = 1,
+    limit = 10,
+    status,
+    search,
+    city,
+    type,
+    sort,
+  }: {
+    page?: number;
+    limit?: number;
+    status?: string;
+    search?: string;
+    city?: string;
+    type?: string;
+    sort?: string;
+  }) {
+    const pipeline: any[] = [];
+    const match: any = {};
+
+    if (status) match.status = status;
+    if (type) match.type = type;
+    if (city) match["address.city"] = { $regex: city, $options: "i" };
+
+    pipeline.push({ $match: match });
+
+    // JOIN OWNER
+    pipeline.push({
+      $lookup: {
+        from: "users",
+        localField: "owner",
+        foreignField: "_id",
+        as: "owner",
+      },
+    });
+    pipeline.push({ $unwind: "$owner" });
+
+    // JOIN ROOM TYPES
+    pipeline.push({
+      $lookup: {
+        from: "roomtypes",
+        localField: "roomTypes",
+        foreignField: "_id",
+        as: "roomTypes",
+      },
+    });
+
+    // JOIN PHOTOS
+    pipeline.push({
+      $lookup: {
+        from: "photokosts",
+        localField: "photos",
+        foreignField: "_id",
+        as: "photos",
+      },
+    });
+
+    // SEARCH FILTER
+    if (search) {
+      const searchFilter = {
+        $or: [
+          { name: { $regex: search, $options: "i" } },
+          { "owner.name": { $regex: search, $options: "i" } },
+          { "address.city": { $regex: search, $options: "i" } },
+        ],
+      };
+      pipeline.push({ $match: searchFilter });
+    }
+
+    // PROJECT
+    pipeline.push({
+      $project: {
+        _id: 1,
+        name: 1,
+        type: 1,
+        status: 1,
+        address: 1,
+        photos: 1,
+        createdAt: 1,
+        owner: {
+          _id: "$owner._id",
+          name: "$owner.name",
+        },
+        roomTypes: "$roomTypes",
+      },
+    });
+
+    // SORTING
+    if (sort === "date_asc") pipeline.push({ $sort: { createdAt: 1 } });
+    else if (sort === "date_desc") pipeline.push({ $sort: { createdAt: -1 } });
+    else if (sort === "name_asc") pipeline.push({ $sort: { name: 1 } });
+    else if (sort === "name_desc") pipeline.push({ $sort: { name: -1 } });
+    else pipeline.push({ $sort: { createdAt: -1 } });
+
+    // PAGINATION
+    pipeline.push({ $skip: (page - 1) * limit }, { $limit: limit });
+
+    // COUNT TOTAL
+    const countPipeline: any[] = [{ $match: match }];
+    if (search) {
+      countPipeline.push({
+        $match: {
+          $or: [
+            { name: { $regex: search, $options: "i" } },
+            { "owner.name": { $regex: search, $options: "i" } },
+            { "address.city": { $regex: search, $options: "i" } },
+          ],
+        },
+      });
+    }
+    countPipeline.push({ $count: "total" });
+
+    const [result, totalData] = await Promise.all([
+      Kost.aggregate(pipeline),
+      Kost.aggregate(countPipeline),
+    ]);
+
+    const total = totalData[0]?.total || 0;
+
+    return {
+      docs: result,
+      totalDocs: total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+      hasNextPage: page * limit < total,
+      hasPrevPage: page > 1,
+    };
+  }
+
   async findRoomTypesWithFilters(query: any) {
     const {
       page = 1,

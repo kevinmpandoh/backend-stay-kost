@@ -70,14 +70,14 @@ const createPayout = async ({
   if (!owner) throw new ResponseError(404, "Owner tidak ditemukan");
 
   const amount = invoice.amount;
-  const fee = Math.floor(amount * 0.05); // contoh 5% fee
+  const fee = 5000;
   const netAmount = amount - fee;
 
   const payoutData = {
     payoutNumber: generatePayoutNumber(),
     owner: owner._id,
     invoice: invoice._id,
-    amount: 1,
+    amount: amount,
     platformFee: fee,
     netAmount,
     currency: "IDR",

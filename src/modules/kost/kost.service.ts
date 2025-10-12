@@ -16,6 +16,8 @@ import { reviewRepository } from "../review/review.repository";
 import { subscriptionRepository } from "../subscription/subscription.repository";
 import { bookingRepository } from "../booking/booking.repository";
 import { BookingStatus } from "../booking/booking.types";
+import { IFacility } from "../facility/facility.model";
+import { availableMemory } from "node:process";
 
 const getAll = async (query: any) => {
   // return await kostRepository.findRoomTypesWithFilters(query);
@@ -110,7 +112,7 @@ const getAll = async (query: any) => {
 };
 
 const getKostById = async (kostId: string) => {
-  const kost = await kostRepository.findById(kostId, [
+  const kost = (await kostRepository.findById(kostId, [
     {
       path: "owner",
     },
@@ -123,10 +125,71 @@ const getKostById = async (kostId: string) => {
     {
       path: "rules",
     },
-  ]);
+    {
+      path: "roomTypes",
+      populate: "facilities photos rooms reviews",
+    },
+  ])) as any;
 
   if (!kost) throw new ResponseError(404, "Kost not found");
-  return kost;
+
+  const formatted = {
+    id: kost._id,
+    name: kost.name,
+    description: kost.description,
+    type: kost.type,
+    address: {
+      province: kost.address.province,
+      city: kost.address.city,
+      district: kost.address.district,
+      detail: kost.address.detail,
+      coordinates: {
+        lat: kost.address.coordinates.coordinates[1],
+        lng: kost.address.coordinates.coordinates[0],
+      },
+    },
+    owner: {
+      id: kost.owner._id,
+      name: kost.owner.name,
+      email: kost.owner.email,
+      phone: kost.owner.phone,
+      avatarUrl: kost.owner.avatarUrl,
+    },
+    facilities: kost.facilities.map((f: any) => f.name),
+    rules: kost.rules.map((r: any) => r.name),
+    photos: kost.photos.map((p: any) => ({
+      id: p._id,
+      category: p.category,
+      url: p.url,
+    })),
+    roomTypes: kost.roomTypes.map((room: any) => ({
+      id: room._id,
+      name: room.name,
+      price: room.price,
+      size: room.size,
+      status: room.status,
+      facilities: room.facilities.map((f: any) => f.name),
+      photos: room.photos.map((p: any) => ({
+        id: p._id,
+        url: p.url,
+        categry: p.category,
+      })),
+      totalRooms: room.rooms.length,
+      availableRooms: room.rooms.filter(
+        (r: any) => r.status === RoomStatus.AVAILABLE
+      ).length,
+      occupiedRooms: room.rooms.filter(
+        (r: any) => r.status === RoomStatus.OCCUPIED
+      ).length,
+      totalReviews: room.reviews.length,
+    })),
+    status: kost.status,
+    isPublished: kost.isPublished,
+    createdAt: kost.createdAt,
+    updatedAt: kost.updatedAt,
+  };
+
+  return formatted;
 };
 
 const getDetailKostPublic = async (roomTypeId: string) => {
@@ -689,40 +752,59 @@ const deleteKost = async (id: string) => {
   // await photoKostRepository.deleteMany({ kost: id });
 };
 
-const listAllPending = async () => {
-  // Simpan ke database
-  const kosts = await kostRepository.findAll(
-    {
-      status: KostStatus.PENDING,
-    },
-    {},
-    [
-      { path: "photos" },
-      {
-        path: "owner",
-      },
-      {
-        path: "roomTypes",
-        populate: "facilities rooms photos",
-      },
-    ]
-  );
+const listAll = async ({
+  query,
+}: {
+  query: {
+    status?: string;
+    search?: string;
+    city?: string;
+    type?: string;
+    sort?: string;
+    page?: number;
+    limit?: number;
+  };
+}) => {
+  console.log(query, "QUERY");
+  const kosts = await kostRepository.findKostsWithFilters({
+    page: query.page ?? 1,
+    limit: query.limit ?? 10,
+    status: query.status,
+    search: query.search,
+    city: query.city,
+    type: query.type,
+    sort: query.sort ?? "date_desc",
+  });
 
-  const formatted = kosts.map((kost: any) => ({
+  // Format hasil
+  const formatted = kosts.docs.map((kost: any) => ({
     id: kost._id,
     name: kost.name,
-    photo: kost.photos?.[0]?.url || null,
     type: kost.type,
+    status: kost.status,
+    photo: kost.photos?.[0]?.url || null,
     address: kost.address
       ? `${kost.address.district}, ${kost.address.city}`
       : null,
+    owner: {
+      id: kost.owner?._id,
+      name: kost.owner?.name,
+    },
     createdAt: kost.createdAt,
-    owner: kost.owner,
-    roomTypes: kost.roomTypes,
-    photos: kost.photos,
+    totalRoomTypes: kost.roomTypes?.length || 0,
   }));
 
-  return formatted;
+  return {
+    data: formatted,
+    pagination: {
+      total: kosts.totalDocs,
+      page: kosts.page,
+      limit: kosts.limit,
+      totalPages: kosts.totalPages,
+      hasNextPage: kosts.hasNextPage,
+      hasPrevPage: kosts.hasPrevPage,
+    },
+  };
 };
 
 const approve = async (kostId: string) => {
@@ -760,7 +842,7 @@ export default {
   updateFacilities,
   updatePhotoKost,
   updateRoomType,
-  listAllPending,
+  listAll,
   approve,
   reject,
   deleteKost,
