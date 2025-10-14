@@ -132,7 +132,7 @@ const kostData = [
           "Kursi",
           "Lemari Baju",
           "Jendela",
-          "Kamar Mandi Dalam",
+          "K. Mandi Dalam",
           "Cermin",
         ],
         totalRooms: 5,
@@ -525,7 +525,7 @@ const kostData = [
         name: "Tipe A",
         size: "3 X 3",
         price: 700000,
-        facilities: ["Kamar Mandi Dalam"],
+        facilities: ["K. Mandi Dalam"],
         totalRooms: 15,
         occupiedRooms: 0,
         roomPhotos: [
@@ -788,7 +788,7 @@ const kostData = [
         name: "Tipe A",
         size: "3 X 3",
         price: 600000,
-        facilities: ["Meja", "Kursi", "Kasur", "Bantal", "Kamar Mandi Dalam"],
+        facilities: ["Meja", "Kursi", "Kasur", "Bantal", "K. Mandi Dalam"],
         totalRooms: 5,
         occupiedRooms: 0,
         roomPhotos: [
@@ -943,6 +943,66 @@ const kostData = [
           {
             category: PhotoRoomCategory.INSIDE_ROOM,
             url: "https://res.cloudinary.com/dcq397jrp/image/upload/v1760056200/IMG-20250929-WA0040_z9rlfn.jpg",
+          },
+        ],
+      },
+    ],
+  },
+  {
+    name: "Kost Kasih Karunia",
+    description: "deskrpsi Kost Kasih Karunia",
+    type: KostType.CAMPUR,
+    address: {
+      province: "Sulawesi Utara",
+      city: "Minahasa",
+      district: "Tondano Selatan",
+      detail: "lorong Pos LLAJ, Tataaran Patar, Tondano Selatan",
+      coordinates: { lat: 1.2651241930159982, lng: 124.87691951045149 },
+    },
+    facilities: [
+      "Wifi",
+      "Dapur Bersama",
+      "Parkiran Motor",
+      "CCTV",
+      "Kamar Mandi Luar",
+    ],
+    rules: [
+      "Akses 24 Jam",
+      "Tamu bebas berkunjung",
+      "Dilarang membawa minuman keras",
+    ],
+    isPublished: true,
+    status: KostStatus.APPROVED,
+    photos: [
+      {
+        category: PhotoCategory.FRONT_VIEW,
+        url: "https://res.cloudinary.com/dcq397jrp/image/upload/v1760340666/IMG-20251013-WA0006_srldqh.jpg",
+      },
+      {
+        category: PhotoCategory.ROOM_VIEW,
+        url: "https://res.cloudinary.com/dcq397jrp/image/upload/v1760340670/IMG-20251013-WA0008_szpz9m.jpg",
+      },
+    ],
+    roomTypes: [
+      {
+        name: "Tipe A",
+        size: "3 X 3",
+        price: 500000,
+        facilities: ["K. Mandi Dalam", "Kasur"],
+        totalRooms: 5,
+        occupiedRooms: 0,
+        roomPhotos: [
+          {
+            category: PhotoRoomCategory.INSIDE_ROOM,
+            url: "https://res.cloudinary.com/dcq397jrp/image/upload/v1760340666/IMG-20251013-WA0004_n8rz1g.jpg",
+          },
+          {
+            category: PhotoRoomCategory.INSIDE_ROOM,
+            url: "https://res.cloudinary.com/dcq397jrp/image/upload/v1760340666/IMG-20251013-WA0005_h91ejr.jpg",
+          },
+          {
+            category: PhotoRoomCategory.BATH_ROOM,
+            url: "https://res.cloudinary.com/dcq397jrp/image/upload/v1760340666/IMG-20251013-WA0007_y9ybmd.jpg",
           },
         ],
       },

@@ -6,7 +6,7 @@ type Payload = { id: string; role: "admin" | "owner" | "tenant" };
 
 export const generateAccessToken = (payload: Payload) => {
   return jwt.sign(payload, env.JWT_SECRET, {
-    expiresIn: "15m",
+    expiresIn: "30m",
   });
 };
 

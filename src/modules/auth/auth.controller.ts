@@ -105,9 +105,13 @@ export const googleCallbackRedirect = [
         return res.redirect(`${env.FRONTEND_URL}/login?error=unauthorized`);
       }
 
+      console.log(req.user, "REQ USER");
+
       const { accessToken, refreshToken } = await service.loginWithGoogle(
         req.user
       );
+
+      console.log(accessToken, refreshToken, "TOKENS");
 
       setAuthCookies(res, accessToken, refreshToken);
       res.redirect(`${env.FRONTEND_URL}/callback?login=google`);
