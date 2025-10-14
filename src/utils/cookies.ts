@@ -13,6 +13,15 @@ export function setAuthCookies(
     // secure: env.NODE_ENV !== "development" ? true : false,
     // domain: env.COOKIE_DOMAIN,
   };
+
+  console.log("Setting cookies with options:", {
+    ...common,
+    accessTokenOptions: {
+      accessToken,
+      refreshToken,
+    },
+  });
+
   res.cookie("accessToken", accessToken, {
     ...common,
     path: "/",
