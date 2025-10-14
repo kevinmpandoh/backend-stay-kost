@@ -85,7 +85,7 @@ const getAll = async (query: any) => {
 
       return {
         id: roomTypes._id,
-        name: `${kost.name} ${roomTypes.name}`,
+        name: `${kost.name} - ${roomTypes.name}`,
         address: `${kost.address.district}, ${kost.address.city}`,
         type: kost.type,
         price: roomTypes.price,
