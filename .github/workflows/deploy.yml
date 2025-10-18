@@ -23,8 +23,19 @@ jobs:
       - name: Deploy to DigitalOcean
         run: |
           ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no ${{ secrets.DO_USER }}@${{ secrets.DO_HOST }} << 'EOF'
-            cd /var/www/backend  
+            cd /var/www/backend
+
+            echo "🔁 Pulling latest code..."
             git pull origin main
-            npm install --production
-            pm2 restart backend || pm2 start server.js --name backend
+
+            echo "📦 Installing dependencies..."
+            npm ci --omit=dev
+
+            echo "🏗️ Building project..."
+            npm run build
+
+            echo "🚀 Restarting PM2 process..."
+            pm2 restart backend || pm2 start dist/server.js --name backend
+
+            echo "✅ Deployment finished!"
           EOF
