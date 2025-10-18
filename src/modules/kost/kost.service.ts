@@ -280,8 +280,8 @@ const getDetailKostPublic = async (roomTypeId: string) => {
     id: roomType._id,
     reviews: reviews.map((review: any) => ({
       id: review._id,
-      name: review.tenant.name,
-      avatar: review.tenant.foto_profil,
+      name: review.tenant?.name,
+      avatar: review.tenant?.avatarUrl,
       rating: review.rating,
       message: review.comment,
       reply: review.reply,
@@ -299,8 +299,8 @@ const getDetailKostPublic = async (roomTypeId: string) => {
     kostFacilities: kost.facilities.map((f: any) => f.name),
     address: kost.address,
     owner: {
-      name: kost.owner.name,
-      avatar: kost.owner.avatarUrl,
+      name: kost.owner?.name,
+      avatar: kost.owner?.avatarUrl,
     },
     otherKostTypes: otherRoomTypes.map((type: any) => ({
       id: type._id,
