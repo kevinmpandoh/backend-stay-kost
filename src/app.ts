@@ -35,7 +35,7 @@ app.use(errorMiddleware);
 app.use((_req, res) => {
   res.status(404).json({
     status: "Failed",
-    message: "Resource not found!!",
+    message: "Resource not found!!qweW",
   });
 });
 
