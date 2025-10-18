@@ -27,7 +27,7 @@ app.use(cookieParser());
 app.use(passport.initialize());
 
 app.use("/api", routes);
-app.get("/api/health", (_req, res) => res.json({ ok: true }));
+app.get("/api/health", (_req, res) => res.json({ ok: true, status: 200 }));
 
 app.use(errorMiddleware);
 
