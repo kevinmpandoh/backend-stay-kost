@@ -177,7 +177,7 @@ export const PreferenceService = {
         kost.photos?.map((photo: IPhotoKost) => photo.url) || [];
       const roomPhotos =
         roomType.photos?.map((photo: IPhotoRoom) => photo.url) || [];
-      const photos = [...kostPhotos, ...roomPhotos];
+      const photos = [...roomPhotos, ...kostPhotos];
 
       return {
         id: roomType._id,

@@ -22,6 +22,7 @@ export class PaymentService {
     const payment = await paymentRepository.findAll(
       {
         user: tenantId,
+        status: PaymentStatus.SUCCESS,
       },
       {},
       [
@@ -42,8 +43,8 @@ export class PaymentService {
       ]
     );
     return payment.map((data: any) => {
-      const roomType = data.invoice.booking.roomType;
-      const kost = data.invoice.booking.kost;
+      const roomType = data.invoice?.booking?.roomType;
+      const kost = data.invoice?.booking?.kost;
 
       return {
         id: data._id,
@@ -53,7 +54,7 @@ export class PaymentService {
         channel: data.channel,
         status: data.status,
         amount: data.amount,
-        desciption: data.invoice.description,
+        desciption: data.invoice?.description,
         payment_date: dayjs(data.paidAt).format("D MMMM YYYY"),
         invoice: data.invoice.invoiceNumber,
       };

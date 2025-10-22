@@ -189,7 +189,7 @@ export const BookingService = {
     await bookingRepository.updateById(bookingId, {
       status: BookingStatus.WAITING_FOR_PAYMENT,
       room: roomId,
-      paymentDeadline: dayjs().add(1, "day").toDate(),
+      paymentDeadline: dayjs().add(3, "minutes").toDate(),
       confirmedAt: new Date(),
       confirmDueDate: null,
       firstInvoice: invoices[0]._id, // 🔥 penting
@@ -200,7 +200,7 @@ export const BookingService = {
       status: RoomStatus.OCCUPIED,
     });
 
-    await agenda.schedule("in 1 day", "expire-booking-payment", {
+    await agenda.schedule("in 3 minutes", "expire-booking-payment", {
       bookingId: bookingId,
     });
 
@@ -411,9 +411,13 @@ export const BookingService = {
     );
 
     // Schedule auto check-out
-    await agenda.schedule(booking.endDate, "auto-check-out", {
-      bookingId: booking._id.toString(),
-    });
+    await agenda.schedule(
+      booking.stopRequest?.requestedStopDate,
+      "auto-check-out",
+      {
+        bookingId: booking._id.toString(),
+      }
+    );
   },
 
   async stopRentTenant(payload: any) {
@@ -647,7 +651,7 @@ export const BookingService = {
         tenant: {
           id: booking.tenant._id,
           name: booking.tenant.name,
-          foto_profile: booking.tenant.foto_profil,
+          avatarUrl: booking.tenant.avatarUrl,
         },
 
         tanggalMasuk: dayjs(booking.startDate).format("D MMMM YYYY"),
@@ -926,8 +930,6 @@ export const BookingService = {
       },
       {
         path: "tenant",
-        select:
-          "name email foto_profil pekerjaan kontak_darurat  phone jenis_kelamin",
       },
       {
         path: "room",
@@ -956,10 +958,12 @@ export const BookingService = {
         name: booking.tenant.name,
         email: booking.tenant.email,
         phone: booking.tenant.phone,
-        emergencyContact: booking.tenant.kontak_darurat,
-        gender: booking.tenant.jenis_kelamin,
-        job: booking.tenant.pekerjaan,
-        photo: booking.tenant.foto_profil,
+        emergencyContact: booking.tenant.tenantProfile?.emergencyContact,
+        gender: booking.tenant.tenantProfile?.gender,
+        job:
+          booking.tenant.tenantProfile?.job ||
+          booking.tenant.tenantProfile?.otherJob,
+        photo: booking.tenant.avatarUrl,
       },
     };
   },
