@@ -139,7 +139,7 @@ export class BookingRepository extends BaseRepository<IBooking> {
         tenant: {
           _id: "$tenant._id",
           name: "$tenant.name",
-          foto_profile: "$tenant.avatarUrl",
+          avatarUrl: "$tenant.avatarUrl",
         },
         kost: {
           _id: "$kost._id",

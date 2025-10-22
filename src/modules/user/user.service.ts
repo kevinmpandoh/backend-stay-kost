@@ -26,7 +26,7 @@ const getCurrent = async (userId: string, role: string) => {
     phone: user.phone,
     role: user.role,
     photo: user.avatarUrl,
-    gender: user.tenantProfile?.gender,
+    gender: user.tenantProfile?.gender === "male" ? "Laki-laki" : "Perempuan",
     birthDate: dayjs(user.tenantProfile?.birthDate).format("YYYY-MM-DD"),
     job: user.tenantProfile?.job,
     otherJob: user.tenantProfile?.otherJob,

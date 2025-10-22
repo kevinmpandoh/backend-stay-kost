@@ -642,7 +642,7 @@ const kostData = [
     ],
     roomTypes: [
       {
-        name: "Tipe Full",
+        name: "Tipe Biasa",
         size: "3 X 3",
         price: 350000,
         facilities: [],
