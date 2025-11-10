@@ -119,7 +119,6 @@ export default {
 
   async getAll(req: Request, res: Response, next: NextFunction) {
     try {
-      console.log(req.validatedQuery);
       const kosts = await kostService.listAll({
         query: req.validatedQuery,
       });

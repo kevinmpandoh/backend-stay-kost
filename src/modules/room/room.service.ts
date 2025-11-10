@@ -1,6 +1,8 @@
 import { ResponseError } from "@/utils/response-error.utils";
 import { roomRepository } from "./room.repository";
 import { roomTypeRepository } from "../room-type/room-type.repository";
+import { bookingRepository } from "../booking/booking.repository";
+import { BookingStatus } from "../booking/booking.types";
 
 const getAll = async () => {
   return await roomRepository.findAll();
@@ -42,11 +44,46 @@ const getRooms = async (roomTypeId: string, status: any) => {
 };
 
 const updateRoom = async (roomId: string, payload: any) => {
+  const room = await roomRepository.findById(roomId);
+  if (!room) throw new ResponseError(404, "Room not found");
+
+  const booking = await bookingRepository.findOne({
+    room: roomId,
+    status: {
+      $in: [
+        BookingStatus.ACTIVE,
+        BookingStatus.WAITING_FOR_CHECKIN,
+        BookingStatus.WAITING_FOR_PAYMENT,
+      ],
+    },
+  });
+
+  if (booking) {
+    throw new ResponseError(400, "Cannot update room that has active bookings");
+  }
+
   const newRoom = await roomRepository.updateById(roomId, payload);
-  if (!newRoom) throw new ResponseError(404, "Room not found");
+
   return newRoom;
 };
 const deleteRoom = async (roomId: string) => {
+  const room = await roomRepository.findById(roomId);
+  if (!room) throw new ResponseError(404, "Room not found");
+
+  const booking = await bookingRepository.findOne({
+    room: roomId,
+    status: {
+      $in: [
+        BookingStatus.ACTIVE,
+        BookingStatus.WAITING_FOR_CHECKIN,
+        BookingStatus.WAITING_FOR_PAYMENT,
+      ],
+    },
+  });
+
+  if (booking) {
+    throw new ResponseError(400, "Cannot update room that has active bookings");
+  }
   return await roomRepository.deleteById(roomId);
 };
 

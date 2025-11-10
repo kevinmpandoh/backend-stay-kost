@@ -16,8 +16,6 @@ import { reviewRepository } from "../review/review.repository";
 import { subscriptionRepository } from "../subscription/subscription.repository";
 import { bookingRepository } from "../booking/booking.repository";
 import { BookingStatus } from "../booking/booking.types";
-import { IFacility } from "../facility/facility.model";
-import { availableMemory } from "node:process";
 
 const getAll = async (query: any) => {
   // return await kostRepository.findRoomTypesWithFilters(query);
@@ -25,6 +23,7 @@ const getAll = async (query: any) => {
   const roomFacilities = query.roomFacilities?.split(",") ?? [];
   const rules = query.rules?.split(",") ?? [];
   const kostType = query.kostType?.split(",") ?? [];
+  const rating = query.rating ? parseFloat(query.rating) : null;
 
   const result = await kostRepository.findRoomTypesWithFilters({
     ...query,
@@ -32,6 +31,7 @@ const getAll = async (query: any) => {
     kostFacilities,
     roomFacilities,
     rules,
+    rating,
   });
 
   const data = await Promise.all(
@@ -290,7 +290,7 @@ const getDetailKostPublic = async (roomTypeId: string) => {
     averageRating,
     availableRooms,
     photos: allPhotos,
-    name: `${kost.name} ${roomType.name}`,
+    name: `${kost.name} - ${roomType.name}`,
     description: kost.description,
     price: roomType.price,
     type: kost.type,
@@ -765,7 +765,6 @@ const listAll = async ({
     limit?: number;
   };
 }) => {
-  console.log(query, "QUERY");
   const kosts = await kostRepository.findKostsWithFilters({
     page: query.page ?? 1,
     limit: query.limit ?? 10,

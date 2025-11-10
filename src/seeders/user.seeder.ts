@@ -6,9 +6,24 @@ import bcrypt from "bcryptjs";
 import { Package } from "@/modules/package/package.model";
 
 import { Subscription } from "@/modules/subscription/subscription.model";
+import { Preference } from "@/modules/preference/preference.model";
+import { Payout } from "@/modules/payout/payout.model";
+import paymentModel from "@/modules/payment/payment.model";
+import { Notification } from "@/modules/notification/notification.model";
+import { Message } from "@/modules/chat/message.model";
+import { Chat } from "@/modules/chat/chat.model";
+import { Invoice } from "@/modules/invoice/invoice.model";
 
 const userSeeder = async () => {
   try {
+    await Subscription.deleteMany();
+    await Preference.deleteMany();
+    await Payout.deleteMany();
+    await paymentModel.deleteMany();
+    await Notification.deleteMany();
+    await Message.deleteMany();
+    await Chat.deleteMany();
+    await Invoice.deleteMany();
     const deleteResult = await User.deleteMany();
     console.log(`Deleted ${deleteResult.deletedCount} user(s)`);
 

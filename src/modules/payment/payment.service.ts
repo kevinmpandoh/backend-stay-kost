@@ -189,8 +189,10 @@ export class PaymentService {
           payment.user._id,
           payment.user.role === "owner" ? "owner" : "tenant",
           "payment",
-          `Pembayaran Rp${payment.amount.toLocaleString()} berhasil`,
-          "Payment Success",
+          `Pembayaran dengan invoice ${
+            body.order_id
+          } berjumlah Rp${payment.amount.toLocaleString()} berhasil dibayarkan.`,
+          "Pembayaran Berhasil",
           { invoiceId: invoice?._id }
         );
       } else if (newStatus === PaymentStatus.EXPIRED) {
@@ -200,8 +202,8 @@ export class PaymentService {
           "payment",
           `Pembayaran dengan invoice ${
             body.order_id
-          } berjumlah Rp${payment.amount.toLocaleString()} gagal dibayarkan`,
-          "Payment Success"
+          } berjumlah Rp${payment.amount.toLocaleString()} gagal dibayarkan.`,
+          "Pembayaran Gagal"
         );
       } else if (newStatus === PaymentStatus.FAILED) {
         await notificationService.sendNotification(

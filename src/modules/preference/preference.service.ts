@@ -127,6 +127,9 @@ export const PreferenceService = {
 
     // const tfidfRules = getTfIdfVectors([userRules, ...ruleDocs]);
 
+    console.log("Preference", pref);
+    console.log("TF-IDF Facilities:", tfidfFacilities);
+
     const result = roomTypes.map((roomType: any, i: number) => {
       const kost = roomType.kost;
       const [lng, lat] = kost.address?.coordinates.coordinates || [];
@@ -143,7 +146,9 @@ export const PreferenceService = {
       // Harga
       const price = roomType.price || 0;
 
-      const priceScore = getPriceCategoryScore(price, pref.price.max);
+      const priceScore = getPriceCategoryScore(price, pref.price);
+
+      console.log(price);
 
       // Jenis Kost
       const kostTypeScore = kost.type === pref.kostType ? 1 : 0;
@@ -151,6 +156,14 @@ export const PreferenceService = {
       const facilityScore = getCosineSimilarity(tfidfFacilities, i + 1);
 
       // const ruleScore = getCosineSimilarity(tfidfRules, i + 1);
+
+      console.log({
+        kostName: kost.name,
+        locationScore,
+        priceScore,
+        kostTypeScore,
+        facilityScore,
+      });
 
       // Final Score (berdasarkan bobot)
       const finalScore =

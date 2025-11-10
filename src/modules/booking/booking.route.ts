@@ -57,6 +57,7 @@ router.post(
   validate(createBookingSchema),
   bookingController.createBooking
 );
+
 router.post(
   "/:bookingId/check-in",
   role(["tenant"]),
@@ -87,7 +88,7 @@ router.post(
 );
 
 router.patch(
-  "/:bookingId/cancle",
+  "/:bookingId/cancel",
   role(["tenant"]),
   bookingController.cancelBooking
 );

@@ -1,6 +1,6 @@
 import { redis } from "@/config/redis";
 
-import { sendMail } from "@/config/mailer";
+import { sendMail } from "@/config/resend";
 import { resetPasswordTemplate } from "@/utils/email-template";
 import crypto from "crypto";
 import { env } from "@/config/env";
@@ -20,11 +20,11 @@ export async function requestReset(email: string) {
   const token = crypto.randomBytes(32).toString("hex");
   await redis.set(`${RESET_NS}:${token}`, user._id.toString(), "EX", RESET_TTL);
   const link = `${env.FRONTEND_URL}/reset-password?token=${token}`;
-  await sendMail(
-    email,
-    "Reset Password",
-    resetPasswordTemplate(user.name, link)
-  );
+  await sendMail({
+    to: email,
+    subject: "Reset Password",
+    html: resetPasswordTemplate(user.name, link),
+  });
 }
 
 export async function resetPassword(token: string, newPassword: string) {

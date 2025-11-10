@@ -11,11 +11,11 @@ export interface IPreference extends Document {
     coordinates: { lat: number; lng: number };
   };
   kostType: KostType;
-  // price: number;
-  price: {
-    min: number;
-    max: number;
-  };
+  price: number;
+  // price: {
+  //   min: number;
+  //   max: number;
+  // };
   kostFacilities: mongoose.Types.ObjectId[];
   roomFacilities: mongoose.Types.ObjectId[];
   rules: mongoose.Types.ObjectId[];

@@ -36,4 +36,8 @@ export const env = {
 
   COOKIE_SECURE: process.env.COOKIE_SECURE === "true",
   COOKIE_DOMAIN: process.env.COOKIE_DOMAIN || "localhost",
+
+  // Platform fee 5000 IDR
+  PLATFORM_FEE: Number(process.env.PLATFORM_FEE) || 5000,
+  TAX_PERCENTAGE: Number(process.env.TAX_PERCENTAGE) || 0.1, // 10%
 };

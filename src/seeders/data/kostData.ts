@@ -5,7 +5,8 @@ import { PhotoRoomCategory } from "@/modules/photo-room/photo-room.model";
 const kostData = [
   {
     name: "Kost Greenfence",
-    description: "Deskripsi kost Greenfence",
+    description:
+      "Kost nyaman dengan fasilitas lengkap di Tataaran Patar. Akses mudah, lingkungan aman, dan harga terjangkau. Cocok untuk mahasiswa dan pekerja.",
     type: KostType.CAMPUR,
     address: {
       province: "Sulawesi Utara",
@@ -64,7 +65,8 @@ const kostData = [
   },
   {
     name: "Kost Mikha",
-    description: "Deskripsi kost Mikha",
+    description:
+      "Kost strategis dengan fasilitas WiFi gratis, CCTV, dan ruang santai. Dilengkapi kamar mandi dalam dan dapur bersama. Lingkungan tenang dan aman di Tataaran Patar.",
     type: KostType.CAMPUR,
     address: {
       province: "Sulawesi Utara",
@@ -148,7 +150,8 @@ const kostData = [
   },
   {
     name: "Kost Wale Ikoma",
-    description: "Deskripsi kost Wale Ikoma",
+    description:
+      "Kost murah meriah dengan suasana nyaman di Tataaran Patar. Fasilitas WiFi gratis, dapur bersama, dan area parkir luas. Dekat dengan kampus dan pusat kota Tondano.",
     type: KostType.CAMPUR,
     address: {
       province: "Sulawesi Utara",
@@ -208,7 +211,8 @@ const kostData = [
   },
   {
     name: "Kost Vanessa",
-    description: "deskrpsi kost Vanessa",
+    description:
+      "Kost bersih dan nyaman dengan ruang santai yang asri. Dilengkapi WiFi, dapur bersama, dan penjaga kost. Lokasi strategis di Tataaran 2, dekat dengan berbagai fasilitas umum.",
     type: KostType.CAMPUR,
     address: {
       province: "Sulawesi Utara",
@@ -268,7 +272,8 @@ const kostData = [
   },
   {
     name: "Raphael Kost",
-    description: "deskripsi kost Raphael",
+    description:
+      "Kost modern dengan CCTV dan ruang keluarga. Tersedia pilihan kamar beton dan kayu dengan harga terjangkau. WiFi gratis, dapur lengkap, dan area parkir yang luas.",
     type: KostType.CAMPUR,
     address: {
       province: "Sulawesi Utara",
@@ -346,7 +351,8 @@ const kostData = [
   },
   {
     name: "Kost Ristavel",
-    description: "deskripsi kost Ristavel",
+    description:
+      "Kost khusus putri dengan keamanan terjamin, dilengkapi CCTV dan ada jam malam. Fasilitas lengkap termasuk WiFi, kompor, dan dapur bersama. Lokasi tenang dan nyaman di Tataaran Patar.",
     type: KostType.PUTRI,
     address: {
       province: "Sulawesi Utara",
@@ -405,7 +411,8 @@ const kostData = [
   },
   {
     name: "Elyon Kost",
-    description: "deskripsi kost Elyon",
+    description:
+      "Kost nyaman dengan kamar yang sudah dilengkapi furniture dasar. WiFi stabil, CCTV keamanan, dan ruang santai untuk bersantai. Lokasi strategis di Tataaran Patar.",
     type: KostType.CAMPUR,
     address: {
       province: "Sulawesi Utara",
@@ -476,12 +483,13 @@ const kostData = [
   },
   {
     name: "-F-Kost",
-    description: "deskrpsi kost -F",
+    description:
+      "Kost premium dengan kamar mandi dalam di setiap kamar. Fasilitas lengkap termasuk WiFi, CCTV, parkir mobil dan motor. Lokasi tenang di Renegetan Tondano dengan akses mudah.",
     type: KostType.CAMPUR,
     address: {
       province: "Sulawesi Utara",
       city: "Minahasa",
-      district: "Tondano Selatan",
+      district: "Tondano Barat",
       detail: "Renegetan, Tondano",
       coordinates: { lat: 1.2997311496978445, lng: 124.90544215541789 },
     },
@@ -543,7 +551,8 @@ const kostData = [
   },
   {
     name: "Kost God Bless",
-    description: "deskrpsi kost God Bless",
+    description:
+      "Kost terjangkau dengan pilihan kamar papan dan beton. Parkir luas untuk mobil dan motor. WiFi gratis, dapur bersama, dan akses 24 jam. Dekat gerbang UNIMA.",
     type: KostType.CAMPUR,
     address: {
       province: "Sulawesi Utara",
@@ -613,7 +622,8 @@ const kostData = [
   },
   {
     name: "Kost Oma Ani",
-    description: "deskrpsi kost Oma Ani",
+    description:
+      "Kost homey dengan ruang santai yang nyaman. Pilihan kamar biasa dan full furniture. WiFi tersedia, area jemuran luas. Suasana kekeluargaan di Tataaran 1.",
     type: KostType.CAMPUR,
     address: {
       province: "Sulawesi Utara",
@@ -677,7 +687,8 @@ const kostData = [
   },
   {
     name: "Kost Swedia",
-    description: "deskrpsi kost Swedia",
+    description:
+      "Kost ekonomis dengan 2 pilihan tipe kamar. Area parkir motor tersedia, ruang santai outdoor. Lokasi tenang di Tataaran 1, cocok untuk mahasiswa dengan budget terbatas.",
     type: KostType.CAMPUR,
     address: {
       province: "Sulawesi Utara",
@@ -749,7 +760,8 @@ const kostData = [
   },
   {
     name: "Rumah Kost Kembuan",
-    description: "deskrpsi Rumah Kost Kembuan",
+    description:
+      "Kost premium dengan kamar mandi dalam di setiap kamar. Keamanan 24 jam dengan CCTV, WiFi kencang, dan parkir mobil tersedia. Lokasi di Kembuan dekat dengan kampus.",
     type: KostType.CAMPUR,
     address: {
       province: "Sulawesi Utara",
@@ -806,7 +818,8 @@ const kostData = [
   },
   {
     name: "Kost Juventus",
-    description: "deskrpsi Kost Juventus",
+    description:
+      "Kost strategis tepat di depan gerbang UNIMA. WiFi gratis, parkir mobil dan motor luas, dapur bersama. Tamu boleh menginap. Lokasi sangat ideal untuk mahasiswa UNIMA.",
     type: KostType.CAMPUR,
     address: {
       province: "Sulawesi Utara",
@@ -877,7 +890,8 @@ const kostData = [
   },
   {
     name: "Kost Binilang",
-    description: "deskrpsi Kost Binilang",
+    description:
+      "Kost di kompleks perumahan Maesa UNIMA yang aman dan nyaman. Tersedia pilihan kamar papan dan beton dengan harga bersahabat. WiFi dan dapur bersama tersedia.",
     type: KostType.CAMPUR,
     address: {
       province: "Sulawesi Utara",
@@ -902,7 +916,7 @@ const kostData = [
       },
       {
         category: PhotoCategory.ROOM_VIEW,
-        url: "https://res.cloudinary.com/dcq397jrp/image/upload/v1760056199/IMG-20250929-WA0038_ow5skv.jpg",
+        url: "https://res.cloudinary.com/dcq397jrp/image/upload/v1760190625/kost_photos/dnz0km425jz3cnzsqmgs.jpg",
       },
     ],
     roomTypes: [
@@ -950,7 +964,8 @@ const kostData = [
   },
   {
     name: "Kost Kasih Karunia",
-    description: "deskrpsi Kost Kasih Karunia",
+    description:
+      "Kost modern dengan kamar mandi dalam dan kasur yang nyaman. Keamanan 24 jam dengan CCTV, WiFi stabil, dan dapur bersama. Lokasi strategis di dekat Pos LLAJ Tataaran Patar.",
     type: KostType.CAMPUR,
     address: {
       province: "Sulawesi Utara",
