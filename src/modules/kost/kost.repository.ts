@@ -298,6 +298,14 @@ export class KostRepository extends BaseRepository<IKost> {
           foreignField: "_id",
           as: "roomTypes.photos",
         },
+      },
+      {
+        $lookup: {
+          from: "reviews",
+          localField: "roomTypes.reviews",
+          foreignField: "_id",
+          as: "roomTypes.reviews",
+        },
       }
     );
 
@@ -305,11 +313,12 @@ export class KostRepository extends BaseRepository<IKost> {
     if (kostFacilities && kostFacilities.length > 0) {
       pipeline.push({
         $match: {
-          "facilities.name": { $all: kostFacilities },
+          $expr: {
+            $setIsSubset: [kostFacilities, "$facilities.name"],
+          },
         },
       });
     }
-
     // 9. JOIN FASILITAS KAMAR
     pipeline.push({
       $lookup: {
@@ -333,7 +342,9 @@ export class KostRepository extends BaseRepository<IKost> {
     if (roomFacilities && roomFacilities.length > 0) {
       pipeline.push({
         $match: {
-          "roomTypes.facilities.name": { $all: roomFacilities },
+          $expr: {
+            $setIsSubset: [roomFacilities, "$roomTypes.facilities.name"],
+          },
         },
       });
     }
@@ -371,13 +382,26 @@ export class KostRepository extends BaseRepository<IKost> {
       });
     }
 
-    // 14. FILTER RATING
-    if (rating) {
-      pipeline.push({
-        $match: {
-          rating: { $gte: parseFloat(rating) },
+    pipeline.push({
+      $addFields: {
+        averageRating: {
+          $cond: [
+            { $gt: [{ $size: "$roomTypes.reviews" }, 0] },
+            { $avg: "$roomTypes.reviews.rating" },
+            0,
+          ],
         },
-      });
+      },
+    });
+
+    // 15. ✅ FILTER RATING HANYA JIKA VALID
+    if (rating && !isNaN(rating)) {
+      const numericRating = Number(rating);
+      if (numericRating >= 1 && numericRating <= 5) {
+        pipeline.push({
+          $match: { averageRating: { $gte: numericRating } },
+        });
+      }
     }
 
     // 16. SORTING

@@ -33,7 +33,7 @@ export const kostFilterSchema = Joi.object({
     .valid("price_asc", "price_desc", "rating_high", "recommended")
     .optional(),
 
-  rating: Joi.number().min(0).max(5).optional(),
+  rating: Joi.number().min(1).max(5).optional(),
 });
 
 export const kostQueryFilterSchema = Joi.object({

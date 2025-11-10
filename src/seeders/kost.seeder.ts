@@ -10,6 +10,7 @@ import { Room } from "@/modules/room/room.model";
 import { RoomStatus } from "@/modules/room/room.type";
 import { PhotoKost } from "@/modules/photo-kost/photo-kost.model";
 import { PhotoRoom } from "@/modules/photo-room/photo-room.model";
+import { Wishlist } from "@/modules/wishlist/wishlist.model";
 
 export const seedKosts = async () => {
   await Kost.deleteMany();
@@ -17,6 +18,8 @@ export const seedKosts = async () => {
   await Room.deleteMany();
   await PhotoKost.deleteMany();
   await PhotoRoom.deleteMany();
+
+  await Wishlist.deleteMany();
 
   const owners = await User.find({
     role: "owner",

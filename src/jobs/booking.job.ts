@@ -28,16 +28,16 @@ agenda.define("expire-booking-confirm", async (job: any) => {
       booking.owner.toString(),
       "owner",
       "booking",
-      `Booking dengan ID ${bookingId} telah kadaluarsa karena Anda tidak mengkonfirmasi dalam batas waktu yang ditentukan.`,
-      "Booking Kadaluarsa"
+      `Pengajuan sewa dengan ID ${bookingId} telah kadaluarsa karena Anda tidak mengkonfirmasi dalam batas waktu yang ditentukan.`,
+      "Pengajuan Sewa Kadaluarsa"
     );
 
     await notificationService.sendNotification(
       booking.tenant.toString(),
       "tenant",
       "booking",
-      `Booking dengan ID ${bookingId} telah kadaluarsa karena pemilik tidak mengkonfirmasi dalam batas waktu yang ditentukan.`,
-      "Booking Kadaluarsa"
+      `Pengajuan sewa dengan ID ${bookingId} telah kadaluarsa karena pemilik tidak mengkonfirmasi dalam batas waktu yang ditentukan.`,
+      "Pengajuan Sewa Kadaluarsa"
     );
 
     console.log(`❌ Booking ${bookingId} expired (owner tidak konfirmasi)`);
@@ -66,16 +66,16 @@ agenda.define("expire-booking-payment", async (job: any) => {
       booking.owner.toString(),
       "owner",
       "booking",
-      `Booking dengan ID ${bookingId} telah kadaluarsa karena penyewa tidak melakukan pembayaran dalam batas waktu yang ditentukan.`,
-      "Booking Kadaluarsa"
+      `Pengajuan sewa dengan ID ${bookingId} telah kadaluarsa karena penyewa tidak melakukan pembayaran dalam batas waktu yang ditentukan.`,
+      "Pengajuan Sewa Kadaluarsa"
     );
 
     await notificationService.sendNotification(
       booking.tenant.toString(),
       "tenant",
       "booking",
-      `Booking dengan ID ${bookingId} telah kadaluarsa karena Anda tidak melakukan pembayaran dalam batas waktu yang ditentukan.`,
-      "Booking Kadaluarsa"
+      `Pengajuan sewa dengan ID ${bookingId} telah kadaluarsa karena Anda tidak melakukan pembayaran dalam batas waktu yang ditentukan.`,
+      "Pengajuan Sewa Kadaluarsa"
     );
 
     console.log(`❌ Booking ${bookingId} expired (tenant tidak bayar)`);

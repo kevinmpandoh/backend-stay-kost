@@ -60,7 +60,7 @@ export async function login(req: Request, res: Response, next: NextFunction) {
         id: result.user._id,
         name: result.user.name,
         email: result.user.email,
-        avatarUrl: result.user.avatarUrl,
+        photo: result.user.avatarUrl,
         role: result.user.role,
       },
     });
@@ -83,7 +83,7 @@ export async function loginAdmin(
         id: result.user._id,
         name: result.user.name,
         email: result.user.email,
-        avatarUrl: result.user.avatarUrl,
+        photo: result.user.avatarUrl,
         role: result.user.role,
       },
     });
@@ -105,13 +105,9 @@ export const googleCallbackRedirect = [
         return res.redirect(`${env.FRONTEND_URL}/login?error=unauthorized`);
       }
 
-      console.log(req.user, "REQ USER");
-
       const { accessToken, refreshToken } = await service.loginWithGoogle(
         req.user
       );
-
-      console.log(accessToken, refreshToken, "TOKENS");
 
       setAuthCookies(res, accessToken, refreshToken);
       res.redirect(`${env.FRONTEND_URL}/callback?login=google`);

@@ -165,6 +165,7 @@ export const RoomTypeService = {
       kostId: roomType.kost._id,
       roomTypeId,
       kostStatus: roomType.kost.status,
+      roomTypeStatus: roomType.status,
       facilities: newRoomType?.facilities,
     };
   },
@@ -225,6 +226,7 @@ export const RoomTypeService = {
       kostId: roomType.kost._id.toString(),
       kostStatus: roomType.kost.status,
       roomTypeId: roomType._id.toString(),
+      roomTypeStatus: roomType.status,
     };
   },
 

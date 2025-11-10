@@ -68,7 +68,9 @@ export const seedReviews = async () => {
       }),
     });
 
-    await RoomType.findByIdAndUpdate(review._id, {
+    console.log(review.roomType, "REVIEW ID");
+
+    await RoomType.findByIdAndUpdate(review.roomType, {
       $push: {
         reviews: review._id,
       },

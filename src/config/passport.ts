@@ -5,8 +5,6 @@ import { randomBytes } from "crypto";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import { env } from "./env";
 
-console.log(env.GOOGLE_CLIENT_ID, env.GOOGLE_CLIENT_SECRET, env.BASE_URL);
-
 passport.use(
   new GoogleStrategy(
     {

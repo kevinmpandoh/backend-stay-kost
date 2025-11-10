@@ -30,6 +30,16 @@ import { generateInvoiceCode } from "@/utils/generateInvoiceCode";
 import { invoiceRepository } from "../invoice/invoice.repository";
 import { agenda } from "@/config/agenda";
 import { NotificationType } from "../notification/notification.type";
+import { sendMail } from "@/config/resend";
+import {
+  bookingApprovedTemplate,
+  bookingRejectedTemplate,
+  notifyOwnerBookingRequestTemplate,
+  stopRequestApprovedTemplate,
+  stopRequestRejectedTemplate,
+  stopRequestTemplate,
+} from "@/utils/email-template";
+import path from "path";
 dayjs.locale("id");
 
 export const BookingService = {
@@ -37,6 +47,9 @@ export const BookingService = {
     const roomType = (await roomTypeRepository.findById(payload.roomType, [
       {
         path: "kost",
+        populate: {
+          path: "owner",
+        },
       },
       {
         path: "rooms",
@@ -74,7 +87,6 @@ export const BookingService = {
       );
     }
 
-    //  cek apakah sudah ada kost yang check in, aktif atau check out jika ada tidak bisa
     // Cek apakah sudah ada booking di kost yang statusnya ACTIVE, WAITING_FOR_CHECKIN, atau WAITING_FOR_CHECKOUT
     const alreadyBooked = existing.find((b: IBooking) =>
       [
@@ -92,7 +104,6 @@ export const BookingService = {
     );
 
     // Cek apakah masih ada kamar tersedia
-
     if (availableRooms && availableRooms.length === 0)
       throw new ResponseError(400, "No available rooms");
 
@@ -101,23 +112,24 @@ export const BookingService = {
       .toDate();
 
     const totalPrice = roomType.price;
+    const owner = roomType.kost.owner;
 
     const booking = await bookingRepository.create({
       ...payload,
       tenant: tenantId,
       kost: roomType.kost._id,
-      owner: roomType.kost.owner,
+      owner: owner._id,
       endDate,
       totalPrice,
       confirmDueDate: dayjs().add(3, "days").toDate(), // ⏳ TEST: 1 menit
     });
 
     await notificationService.sendNotification(
-      roomType.kost.owner,
+      owner._id,
       "owner",
       NotificationType.BOOKING,
       `Ada penyewa baru yang mengajukan sewa untuk kost ${roomType.kost.name} - ${roomType.name}`,
-      "Booking Request",
+      "Pengajuan Sewa Baru",
       { bookingId: booking._id }
     );
 
@@ -126,8 +138,21 @@ export const BookingService = {
       bookingId: booking._id.toString(),
     });
 
+    await sendMail({
+      to: owner.email,
+      subject: "Pengajuan Sewa Baru - Stay Kost",
+      html: notifyOwnerBookingRequestTemplate(
+        owner.name,
+        `${roomType.kost.name} - ${roomType.name}`,
+        payload.duration,
+        totalPrice,
+        dayjs(payload.startDate).format("D MMMM YYYY")
+      ),
+    });
+
     return booking;
   },
+
   async update(payload: UpdateBookingPayload, bookingId: string) {
     const booking = await bookingRepository.findById(bookingId);
 
@@ -148,6 +173,9 @@ export const BookingService = {
       {
         path: "kost",
         select: "name",
+      },
+      {
+        path: "tenant",
       },
     ])) as any;
 
@@ -174,7 +202,7 @@ export const BookingService = {
 
         return invoiceRepository.create({
           booking: booking._id,
-          user: booking.tenant,
+          user: booking.tenant._id,
           type: "tenant",
 
           amount: booking.totalPrice,
@@ -189,7 +217,7 @@ export const BookingService = {
     await bookingRepository.updateById(bookingId, {
       status: BookingStatus.WAITING_FOR_PAYMENT,
       room: roomId,
-      paymentDeadline: dayjs().add(3, "minutes").toDate(),
+      paymentDeadline: dayjs().add(1, "day").toDate(),
       confirmedAt: new Date(),
       confirmDueDate: null,
       firstInvoice: invoices[0]._id, // 🔥 penting
@@ -200,18 +228,28 @@ export const BookingService = {
       status: RoomStatus.OCCUPIED,
     });
 
-    await agenda.schedule("in 3 minutes", "expire-booking-payment", {
+    await agenda.schedule("in 1 day", "expire-booking-payment", {
       bookingId: bookingId,
     });
 
     await notificationService.sendNotification(
-      booking.tenant.toString(),
+      booking.tenant._id.toString(),
       "tenant",
       "booking",
-      `Pengajuan sewa untuk kost ${booking.kost.name} - ${booking.roomType.name} disetujui oleh pemilik`,
-      "Booking Approved",
+      `Pengajuan sewa untuk kost ${booking.kost.name} - ${booking.roomType.name} disetujui oleh pemilik kost. Silahkan lakukan pembayaran.`,
+      "Pengajuan Sewa Diterima",
       { bookingId: booking._id }
     );
+
+    await sendMail({
+      to: booking.tenant.name,
+      subject: "Pengajuan Sewa Diterima - Stay Kost",
+      html: bookingApprovedTemplate(
+        booking.tenant.name,
+        `${booking.kost.name} - ${booking.roomType.name}`,
+        dayjs(booking.paymentDeadline).format("D MMMM YYYY")
+      ),
+    });
   },
   async reject(bookingId: string, rejectionReason: string) {
     const booking = (await bookingRepository.findById(bookingId, [
@@ -241,10 +279,19 @@ export const BookingService = {
       booking.tenant.toString(),
       "tenant",
       "booking",
-      `Pengajuan sewa untuk kost ${booking.kost.name} - ${booking.roomType.name} ditolak oleh pemilik kost`,
-      "Booking Ditolak",
+      `Pengajuan sewa untuk kost ${booking.kost.name} - ${booking.roomType.name} ditolak oleh pemilik kost.`,
+      "Pengajuan Sewa Ditolak",
       { bookingId: booking._id }
     );
+
+    await sendMail({
+      to: booking.tenant.name,
+      subject: "Pengajuan Sewa Ditolak - Stay Kost",
+      html: bookingRejectedTemplate(
+        booking.tenant.name,
+        `${booking.kost.name} - ${booking.roomType.name}`
+      ),
+    });
   },
 
   async uploadDocument(req: any) {
@@ -322,7 +369,18 @@ export const BookingService = {
     });
   },
   async stopRentRequest(bookingId: string, payload: any) {
-    const booking = await bookingRepository.findById(bookingId);
+    const booking = (await bookingRepository.findById(bookingId, [
+      { path: "owner" },
+      {
+        path: "tenant",
+      },
+      {
+        path: "roomType",
+      },
+      {
+        path: "kost",
+      },
+    ])) as any;
     if (!booking) throw new ResponseError(404, "Booking tidak ditemukan");
 
     if (booking.status !== BookingStatus.ACTIVE) {
@@ -338,13 +396,24 @@ export const BookingService = {
     });
 
     await notificationService.sendNotification(
-      booking.owner.toString(),
+      booking.owner._id.toString(),
       "owner",
       "booking",
       `Penyewa sedang menajukan berhenti sewa. Silahkan konfirmasi`,
       "Berhenti Sewa",
       { bookingId: booking._id }
     );
+
+    await sendMail({
+      to: booking.owner.email,
+      subject: "Pengajuan Sewa Baru - Stay Kost",
+      html: stopRequestTemplate(
+        booking.owner.name,
+        booking.tenant.name,
+        `${booking.kost.name} - ${booking.roomType.name}`,
+        dayjs(payload.stopDate).format("D MMMM YYYY")
+      ),
+    });
   },
 
   async cancelBooking(bookingId: string, tenantId: string) {
@@ -376,7 +445,18 @@ export const BookingService = {
   },
 
   async acceptStopRent(bookingId: string) {
-    const booking = await bookingRepository.findById(bookingId);
+    const booking = (await bookingRepository.findById(bookingId, [
+      { path: "owner" },
+      {
+        path: "tenant",
+      },
+      {
+        path: "roomType",
+      },
+      {
+        path: "kost",
+      },
+    ])) as any;
     if (!booking) throw new ResponseError(404, "Booking not found");
 
     if (!booking.stopRequest) {
@@ -402,7 +482,7 @@ export const BookingService = {
     });
 
     await notificationService.sendNotification(
-      booking.tenant.toString(),
+      booking.tenant._id.toString(),
       "tenant",
       "booking",
       `Pemilik kost menyutujuai pengajuan berhenti sewa Anda`,
@@ -418,6 +498,16 @@ export const BookingService = {
         bookingId: booking._id.toString(),
       }
     );
+
+    await sendMail({
+      to: booking.tenant.name,
+      subject: "Pengajuan Berhenti Sewa Disetujui - Stay Kost",
+      html: stopRequestApprovedTemplate(
+        booking.tenant.name,
+        `${booking.kost.name} - ${booking.roomType.name}`,
+        dayjs(booking.stopRequest?.requestedStopDate).format("D MMMM YYYY")
+      ),
+    });
   },
 
   async stopRentTenant(payload: any) {
@@ -462,7 +552,18 @@ export const BookingService = {
     );
   },
   async rejectStopRent(bookingId: string, rejectionReason: string) {
-    const booking = await bookingRepository.findById(bookingId);
+    const booking = (await bookingRepository.findById(bookingId, [
+      { path: "owner" },
+      {
+        path: "tenant",
+      },
+      {
+        path: "roomType",
+      },
+      {
+        path: "kost",
+      },
+    ])) as any;
     if (!booking) throw new ResponseError(404, "Booking not found");
 
     if (!booking.stopRequest) {
@@ -475,13 +576,22 @@ export const BookingService = {
       },
     });
     await notificationService.sendNotification(
-      booking.tenant.toString(),
+      booking.tenant._id.toString(),
       "tenant",
       "booking",
       `Pemilik kost menolak pengajuan berhenti sewa Anda`,
       "Pengajuan Berhenti Sewa",
       { bookingId: booking._id }
     );
+
+    await sendMail({
+      to: booking.tenant.name,
+      subject: "Pengajuan Berhenti Sewa Ditolak - Stay Kost",
+      html: stopRequestRejectedTemplate(
+        booking.tenant.name,
+        `${booking.kost.name} - ${booking.roomType.name}`
+      ),
+    });
   },
 
   async getAllBookingsAdmin({
@@ -495,8 +605,6 @@ export const BookingService = {
       page: number;
     };
   }) {
-    console.log(query, "QUERY");
-
     const bookings = await bookingRepository.findBookingsWithFilters({
       page: query.page,
       limit: 10,
@@ -530,8 +638,6 @@ export const BookingService = {
       status: booking.status,
       totalPrice: booking.totalPrice,
     }));
-
-    console.log(bookings, formatted, "TES");
 
     return {
       data: formatted,
@@ -584,7 +690,6 @@ export const BookingService = {
           );
           invoiceUnpaid = invoice?.invoiceNumber || null;
         }
-        console.log(booking.note, "TES");
         return {
           id: booking._id,
           kostId: roomType._id,

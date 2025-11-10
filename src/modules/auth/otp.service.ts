@@ -1,4 +1,4 @@
-import { sendMail } from "@/config/mailer";
+import { sendMail } from "@/config/resend";
 import { redis } from "@/config/redis";
 import { generateOtp, OTP_COOLDOWN, OTP_TTL } from "@/utils/otp";
 import { otpTemplate } from "@/utils/email-template";
@@ -37,7 +37,11 @@ export async function sendRegistrationOtp(
   //   html: otpTemplate(payload.name, otp),
   // });
 
-  await sendMail(email, "Verifikasi Akun Kost", otpTemplate(name, otp));
+  await sendMail({
+    to: email,
+    subject: "Verifikasi Akun Kost",
+    html: otpTemplate(name, otp),
+  });
   return { sent: true };
 }
 

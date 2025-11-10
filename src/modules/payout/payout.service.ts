@@ -103,7 +103,7 @@ const createPayout = async ({
       "owner",
       "payout",
       `Pembayaran Kost berjumlah Rp${newPayout.amount.toLocaleString()} GAGAL di transfer ke rekening anda karena Rekening Bank belum lengkap. Silahkan lengkap data rekeningnya`,
-      "Payoout Failed",
+      "Lengkapi Rekening Bank",
       { payoutId: newPayout.invoice }
     );
   } else {
@@ -112,7 +112,7 @@ const createPayout = async ({
       const response = await payoutCreator.createPayouts({
         payouts: [
           {
-            amount: env.NODE_ENV === "production" ? netAmount : 1000, // untuk testing di sandbox, pakai 1000
+            amount: env.NODE_ENV === "production" ? netAmount : 1, // untuk testing di sandbox, pakai 1000
             notes: `Payout for invoice ${invoice._id}`,
             beneficiary_name: owner.bank.accountName,
             beneficiary_account: owner.bank.accountNumber,
@@ -217,7 +217,7 @@ const sendPayout = async (payoutId: string) => {
   try {
     // Data payout yang dikirim ke Midtrans
     const payoutData = {
-      amount: 1,
+      amount: env.NODE_ENV === "production" ? payout.netAmount : 1,
       beneficiary_name: owner.bank.accountName,
       beneficiary_account: owner.bank.accountNumber,
       beneficiary_bank: owner.bank.bankCode,
@@ -344,7 +344,7 @@ const createAutoPayout = async ({
   await payoutRepository.create({
     payoutNumber: "PO-202508-0001",
     owner: ownerId,
-    amount: 1,
+    amount: env.NODE_ENV === "production" ? amount : 1,
     invoice: invoiceId,
     accountName: owner.bank?.accountName,
     accountNumber: owner.bank?.accountNumber,
@@ -401,8 +401,8 @@ const processPayoutNotification = async ({
       "owner",
       "payout",
       `Pembayaran Kost berjumlah Rp${payout.amount.toLocaleString()} berhasil di transfer ke rekening anda`,
-      "Payoout Success",
-      { payotuId: payout.invoice }
+      "Tagihan Kost Berhasil Dibayarkan",
+      { payoutId: payout._id }
     );
   } else if (status === "failed") {
     const mapped = mapPayoutError(error_code, error_message);
@@ -425,7 +425,7 @@ const processPayoutNotification = async ({
         `Pembayaran Kost berjumlah Rp${payout.amount.toLocaleString()} GAGAL di transfer ke rekening anda karena ${
           mapped.ownerMessage
         }`,
-        "Payoout Failed",
+        "Lengkapi Rekening Bank",
         { payotuId: payout.invoice }
       );
     }
