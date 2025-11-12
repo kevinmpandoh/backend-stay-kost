@@ -1,3 +1,4 @@
+// backend/src/modules/photo-kost/photo-kost.route.ts
 import { Router } from "express";
 
 import { validate } from "@/middlewares/validate.middleware";

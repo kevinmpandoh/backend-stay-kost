@@ -102,7 +102,7 @@ const createPayout = async ({
       newPayout.owner.toString(),
       "owner",
       "payout",
-      `Pembayaran Kost berjumlah Rp${newPayout.amount.toLocaleString()} GAGAL di transfer ke rekening anda karena Rekening Bank belum lengkap. Silahkan lengkap data rekeningnya`,
+      `Pembayaran Kost berjumlah Rp${newPayout.amount.toLocaleString()} Gagal di transfer ke rekening anda karena Rekening Bank belum lengkap. Silahkan lengkapi data rekeningnya`,
       "Lengkapi Rekening Bank",
       { payoutId: newPayout.invoice }
     );
@@ -242,7 +242,7 @@ const sendPayout = async (payoutId: string) => {
     await payoutRepository.updateById(payout._id, {
       accountName: owner.bank.accountName,
       accountNumber: owner.bank.accountNumber,
-      status: PayoutStatus.PROCESSED, // sementara, tunggu callback Midtrans
+      status: PayoutStatus.PENDING, // sementara, tunggu callback Midtrans
       method: "bank_transfer",
       provider: "midtrans",
       channel: owner.bank.bankCode,
@@ -383,7 +383,9 @@ const processPayoutNotification = async ({
   const payout = await payoutRepository.findOne({
     externalId: reference_no,
   });
+
   if (!payout) throw new ResponseError(404, "Payout tidak ditemukan");
+
   if (status === "processed") {
     payout.status = PayoutStatus.PROCESSED;
     payout.updatedAt = updated_at;

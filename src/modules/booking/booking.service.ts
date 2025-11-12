@@ -242,7 +242,7 @@ export const BookingService = {
     );
 
     await sendMail({
-      to: booking.tenant.name,
+      to: booking.tenant.email,
       subject: "Pengajuan Sewa Diterima - Stay Kost",
       html: bookingApprovedTemplate(
         booking.tenant.name,
@@ -701,7 +701,7 @@ export const BookingService = {
           tanggalKelaur: dayjs(booking.endDate).format("D MMMM YYYY"),
           tanggalDiajukan: dayjs(booking.createdAt).format("D MMMM YYYY"),
           paymentDeadline: booking.paymentDeadline
-            ? dayjs(booking.paymentDeadline).format("D MMMM YYYY HH:mm")
+            ? booking.paymentDeadline
             : null,
           durasi: booking.duration,
           status: booking.status,

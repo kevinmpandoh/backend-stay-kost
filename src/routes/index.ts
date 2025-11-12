@@ -20,6 +20,7 @@ import bookingRouter from "../modules/booking/booking.route";
 import invoiceRoutes from "../modules/invoice/invoice.route";
 import packageRouter from "../modules/package/package.route";
 import subscriptionRouter from "../modules/subscription/subscription.route";
+
 const router = Router();
 
 router.use("/rules", ruleRoutes);
