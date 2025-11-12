@@ -14,14 +14,6 @@ export function setAuthCookies(
     // domain: env.COOKIE_DOMAIN,
   };
 
-  console.log("Setting cookies with options:", {
-    ...common,
-    accessTokenOptions: {
-      accessToken,
-      refreshToken,
-    },
-  });
-
   res.cookie("accessToken", accessToken, {
     ...common,
     path: "/",
