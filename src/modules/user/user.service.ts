@@ -278,6 +278,8 @@ export const addBankAccount = async (ownerId: string, dto: BankAccountDTO) => {
         alias_name: aliasName,
         email: owner.email,
       });
+
+      console.log(list, "BENEFICIARY LIST");
       const result = await payoutCreator.createBeneficiaries({
         name: accountName,
         account: dto.account,
