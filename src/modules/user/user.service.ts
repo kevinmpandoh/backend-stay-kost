@@ -8,6 +8,13 @@ import { formatAliasName } from "@/utils/generateAliasName";
 import dayjs from "dayjs";
 import { mapMidtransValidationError } from "@/utils/mapMidtransValidatorErrors";
 
+function isNameSimilar(a: string, b: string): boolean {
+  const normalize = (s: string) => s.toLowerCase().replace(/[^a-z]/g, "");
+  return (
+    normalize(a).includes(normalize(b)) || normalize(b).includes(normalize(a))
+  );
+}
+
 const getCurrent = async (userId: string, role: string) => {
   const user = await userRepository.findById(userId);
   if (!user) throw new Error("User not found");
@@ -224,62 +231,41 @@ export const addBankAccount = async (ownerId: string, dto: BankAccountDTO) => {
 
   const accountName = validation.account_name;
 
+  // Step 2: Validasi kesesuaian nama rekening dengan nama owner
+  if (!isNameSimilar(accountName, owner.name)) {
+    throw new ResponseError(
+      400,
+      `Nama rekening (${accountName}) tidak sesuai dengan nama akun (${owner.name}). Pastikan rekening ini milik Anda.`
+    );
+  }
+
+  // Step 3: Cek beneficiary yang sudah ada di Midtrans
+  const allBeneficiaries = await payoutCreator.getBeneficiaries();
+  const existing = allBeneficiaries.find(
+    (b: any) => b.account === dto.account && b.bank === dto.bank
+  );
+
   // Step 2: Cek & create/update beneficiary di Midtrans & simpan ke DB
   try {
     const list = await payoutCreator.getBeneficiaries();
-    if (owner.bank?.aliasName) {
-      let existingBeneficiary = null;
-
-      try {
-        existingBeneficiary = list.find(
-          (b: any) => b.alias_name === owner.bank?.aliasName
-        );
-      } catch (err: unknown) {
-        // jika error dari Midtrans axios-like
-        if ((err as any).ApiResponse) {
-          throw mapMidtransValidationError((err as any).ApiResponse);
-        }
-      }
-      const allBeneficiaries = await payoutCreator.getBeneficiaries();
-      const existingBeneficiaries = allBeneficiaries.find(
-        (b: any) => b.alias_name === owner.bank?.aliasName
-      );
-      if (!existingBeneficiaries) {
-        await payoutCreator.createBeneficiaries({
-          name: accountName,
-          account: dto.account,
-          bank: dto.bank,
-          alias_name: owner.bank.aliasName,
-          email: owner.email,
-        });
-      } else {
-        await payoutCreator.updateBeneficiaries(owner.bank.aliasName, {
-          name: accountName,
-          account: dto.account,
-          bank: dto.bank,
-          alias_name: owner.bank.aliasName,
-          email: owner.email,
-        });
-      }
-
-      owner.bank = {
-        ...owner.bank,
-        bankCode: dto.bank,
-        accountNumber: dto.account,
-        accountName,
-      };
-    } else {
-      const aliasName = formatAliasName(owner.name);
-      console.log(aliasName, "ALIAS NAME");
-      console.log({
+    if (existing) {
+      await payoutCreator.updateBeneficiaries(existing.alias_name, {
         name: accountName,
         account: dto.account,
         bank: dto.bank,
-        alias_name: aliasName,
+        alias_name: existing.alias_name,
         email: owner.email,
       });
 
-      console.log(list, "BENEFICIARY LIST");
+      owner.bank = {
+        bankCode: dto.bank,
+        accountNumber: dto.account,
+        accountName,
+        aliasName: existing.alias_name,
+      };
+    } else {
+      const aliasName = formatAliasName(owner.name);
+
       const result = await payoutCreator.createBeneficiaries({
         name: accountName,
         account: dto.account,
@@ -288,8 +274,6 @@ export const addBankAccount = async (ownerId: string, dto: BankAccountDTO) => {
         email: owner.email,
       });
 
-      console.log(result, "CREATE BENEFICIARY RESULT");
-
       owner.bank = {
         bankCode: dto.bank,
         accountNumber: dto.account,
@@ -297,6 +281,8 @@ export const addBankAccount = async (ownerId: string, dto: BankAccountDTO) => {
         aliasName,
       };
     }
+    await owner.save();
+    return owner.bank;
   } catch (error: any) {
     throw new ResponseError(
       error.httpStatusCode || 400,
@@ -304,9 +290,6 @@ export const addBankAccount = async (ownerId: string, dto: BankAccountDTO) => {
       error.ApiResponse?.errors || {}
     );
   }
-
-  await owner.save();
-  return owner.bank;
 };
 
 export default {
