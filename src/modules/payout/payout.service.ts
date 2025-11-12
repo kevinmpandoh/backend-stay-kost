@@ -242,7 +242,7 @@ const sendPayout = async (payoutId: string) => {
     await payoutRepository.updateById(payout._id, {
       accountName: owner.bank.accountName,
       accountNumber: owner.bank.accountNumber,
-      status: PayoutStatus.PENDING, // sementara, tunggu callback Midtrans
+      status: PayoutStatus.PROCESSED, // sementara, tunggu callback Midtrans
       method: "bank_transfer",
       provider: "midtrans",
       channel: owner.bank.bankCode,
