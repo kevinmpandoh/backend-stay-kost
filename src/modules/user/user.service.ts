@@ -7,13 +7,7 @@ import { payoutCreator } from "@/config/midtrans";
 import { formatAliasName } from "@/utils/generateAliasName";
 import dayjs from "dayjs";
 import { mapMidtransValidationError } from "@/utils/mapMidtransValidatorErrors";
-
-function isNameSimilar(a: string, b: string): boolean {
-  const normalize = (s: string) => s.toLowerCase().replace(/[^a-z]/g, "");
-  return (
-    normalize(a).includes(normalize(b)) || normalize(b).includes(normalize(a))
-  );
-}
+import { validateAccountName } from "@/utils/validateAccountName";
 
 const getCurrent = async (userId: string, role: string) => {
   const user = await userRepository.findById(userId);
@@ -231,13 +225,13 @@ export const addBankAccount = async (ownerId: string, dto: BankAccountDTO) => {
 
   const accountName = validation.account_name;
 
-  // Step 2: Validasi kesesuaian nama rekening dengan nama owner
-  if (!isNameSimilar(accountName, owner.name)) {
-    throw new ResponseError(
-      400,
-      `Nama rekening (${accountName}) tidak sesuai dengan nama akun (${owner.name}). Pastikan rekening ini milik Anda.`
-    );
+  const nameCheck = validateAccountName(accountName, owner.name);
+
+  if (!nameCheck.valid) {
+    throw new ResponseError(400, nameCheck.error!);
   }
+
+  let warningMessage = nameCheck.warning || null;
 
   // Step 3: Cek beneficiary yang sudah ada di Midtrans
   const allBeneficiaries = await payoutCreator.getBeneficiaries();
@@ -282,7 +276,10 @@ export const addBankAccount = async (ownerId: string, dto: BankAccountDTO) => {
       };
     }
     await owner.save();
-    return owner.bank;
+    return {
+      bank: owner.bank,
+      warning: warningMessage,
+    };
   } catch (error: any) {
     throw new ResponseError(
       error.httpStatusCode || 400,
