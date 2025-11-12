@@ -197,6 +197,7 @@ export const addBankAccount = async (ownerId: string, dto: BankAccountDTO) => {
   }
 
   let validation;
+
   try {
     // Step 1: Validasi nomor rekening ke Midtrans
     validation = await payoutCreator.validateBankAccount({
@@ -222,11 +223,52 @@ export const addBankAccount = async (ownerId: string, dto: BankAccountDTO) => {
   }
 
   const accountName = validation.account_name;
-  const aliasName = formatAliasName(ownerId.toString(), dto.bank);
 
-  // Step 2: Jika belum ada beneficiary → create
-  if (!owner.bank?.aliasName) {
-    try {
+  // Step 2: Cek & create/update beneficiary di Midtrans & simpan ke DB
+  try {
+    if (owner.bank?.aliasName) {
+      let existingBeneficiary = null;
+
+      try {
+        const list = await payoutCreator.getBeneficiaries();
+        existingBeneficiary = list.find(
+          (b: any) => b.alias_name === owner.bank?.aliasName
+        );
+      } catch (err: unknown) {
+        // jika error dari Midtrans axios-like
+        if ((err as any).ApiResponse) {
+          throw mapMidtransValidationError((err as any).ApiResponse);
+        }
+      }
+      const allBeneficiaries = await payoutCreator.getBeneficiaries();
+      const existingBeneficiaries = allBeneficiaries.find(
+        (b: any) => b.alias_name === owner.bank?.aliasName
+      );
+      if (!existingBeneficiaries) {
+        await payoutCreator.createBeneficiaries({
+          name: accountName,
+          account: dto.account,
+          bank: dto.bank,
+          alias_name: owner.bank.aliasName,
+          email: owner.email,
+        });
+      } else {
+        await payoutCreator.updateBeneficiaries(owner.bank.aliasName, {
+          name: accountName,
+          account: dto.account,
+          bank: dto.bank,
+          alias_name: owner.bank.aliasName,
+        });
+      }
+
+      owner.bank = {
+        ...owner.bank,
+        bankCode: dto.bank,
+        accountNumber: dto.account,
+        accountName,
+      };
+    } else {
+      const aliasName = formatAliasName(owner.name);
       const result = await payoutCreator.createBeneficiaries({
         name: accountName,
         account: dto.account,
@@ -235,42 +277,21 @@ export const addBankAccount = async (ownerId: string, dto: BankAccountDTO) => {
         email: owner.email,
       });
 
+      console.log(result, "CREATE BENEFICIARY RESULT");
+
       owner.bank = {
         bankCode: dto.bank,
         accountNumber: dto.account,
         accountName,
         aliasName,
       };
-    } catch (error: any) {
-      throw new ResponseError(
-        error.httpStatusCode || 400,
-        error.ApiResponse?.error_message || "Gagal membuat beneficiary",
-        error.ApiResponse?.errors || {}
-      );
     }
-  } else {
-    // Step 3: Jika sudah ada beneficiary → update
-    try {
-      await payoutCreator.updateBeneficiaries(owner.bank.aliasName, {
-        name: accountName,
-        account: dto.account,
-        bank: dto.bank,
-        alias_name: owner.bank.aliasName,
-      });
-
-      owner.bank = {
-        ...owner.bank,
-        bankCode: dto.bank,
-        accountNumber: dto.account,
-        accountName,
-      };
-    } catch (error: any) {
-      throw new ResponseError(
-        error.httpStatusCode || 400,
-        error.ApiResponse?.error_message || "Gagal update beneficiary",
-        error.ApiResponse?.errors || {}
-      );
-    }
+  } catch (error: any) {
+    throw new ResponseError(
+      error.httpStatusCode || 400,
+      error.ApiResponse?.error_message || "Gagal menambahkan rekening bank",
+      error.ApiResponse?.errors || {}
+    );
   }
 
   await owner.save();
