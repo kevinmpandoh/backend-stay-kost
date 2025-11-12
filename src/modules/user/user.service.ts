@@ -226,11 +226,11 @@ export const addBankAccount = async (ownerId: string, dto: BankAccountDTO) => {
 
   // Step 2: Cek & create/update beneficiary di Midtrans & simpan ke DB
   try {
+    const list = await payoutCreator.getBeneficiaries();
     if (owner.bank?.aliasName) {
       let existingBeneficiary = null;
 
       try {
-        const list = await payoutCreator.getBeneficiaries();
         existingBeneficiary = list.find(
           (b: any) => b.alias_name === owner.bank?.aliasName
         );
@@ -258,6 +258,7 @@ export const addBankAccount = async (ownerId: string, dto: BankAccountDTO) => {
           account: dto.account,
           bank: dto.bank,
           alias_name: owner.bank.aliasName,
+          email: owner.email,
         });
       }
 
@@ -269,6 +270,14 @@ export const addBankAccount = async (ownerId: string, dto: BankAccountDTO) => {
       };
     } else {
       const aliasName = formatAliasName(owner.name);
+      console.log(aliasName, "ALIAS NAME");
+      console.log({
+        name: accountName,
+        account: dto.account,
+        bank: dto.bank,
+        alias_name: aliasName,
+        email: owner.email,
+      });
       const result = await payoutCreator.createBeneficiaries({
         name: accountName,
         account: dto.account,
