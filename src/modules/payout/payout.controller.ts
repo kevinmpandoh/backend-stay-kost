@@ -102,4 +102,18 @@ export const PayoutController = {
       next(error);
     }
   },
+
+  async checkPayoutStatus(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { payoutId } = req.params;
+      const result = await payoutService.checkPayoutStatus(payoutId);
+      res.status(200).json({
+        status: "success",
+        message: "Cek status payout berhasil",
+        data: result,
+      });
+    } catch (error: any) {
+      next(error);
+    }
+  },
 };

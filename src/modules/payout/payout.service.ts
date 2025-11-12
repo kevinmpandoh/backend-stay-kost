@@ -12,6 +12,7 @@ import { generatePayoutNumber } from "@/utils/generatePayoutNumber";
 import { mapPayoutError } from "@/utils/payoutErrorMapper";
 import { env } from "@/config/env";
 import { notificationService } from "../notification/notification.service";
+import e from "express";
 
 const getAllPayout = async ({
   query,
@@ -436,6 +437,63 @@ const processPayoutNotification = async ({
   return payout;
 };
 
+const checkPayoutStatus = async (payoutId: string) => {
+  const payout = await payoutRepository.findById(payoutId);
+  console.log(payout, payoutId);
+  if (!payout) throw new ResponseError(404, "Payout tidak ditemukan");
+
+  try {
+    const response = await payoutApproval.getPayoutDetails(payout.externalId!);
+
+    let newStatus: PayoutStatus;
+
+    switch (response.status) {
+      case "pending":
+        newStatus = PayoutStatus.PENDING;
+        break;
+      case "processed":
+        newStatus = PayoutStatus.PROCESSED;
+        break;
+      case "completed":
+        newStatus = PayoutStatus.SUCCESS;
+        break;
+      case "failed":
+        newStatus = PayoutStatus.FAILED;
+        break;
+      default:
+        newStatus = payout.status; // tetap pakai status lama kalau gak dikenali
+    }
+
+    if (newStatus !== payout.status) {
+      payout.status = newStatus;
+
+      if (newStatus === PayoutStatus.FAILED) {
+        const mapped = mapPayoutError(
+          response.error_code,
+          response.error_message
+        );
+        payout.failedReason = mapped.adminReason;
+        payout.isInternalError = mapped.isInternalError;
+        payout.visibleFailedReason = mapped.ownerMessage;
+      } else if (newStatus === PayoutStatus.SUCCESS) {
+        payout.transferredAt = new Date();
+        payout.failedReason = "";
+        payout.isInternalError = false;
+        payout.visibleFailedReason = "";
+      }
+
+      await payout.save();
+    }
+    // return statusRes;
+  } catch (error: any) {
+    throw new ResponseError(
+      error.statusCode || 400,
+      error.ApiResponse.error_message || "Gagal mengecek status payout",
+      error.ApiResponse.errors
+    );
+  }
+};
+
 export default {
   getAllPayout,
   processPayoutNotification,
@@ -446,4 +504,5 @@ export default {
   rejectPayout,
   updateBeneficiaries,
   createAutoPayout,
+  checkPayoutStatus,
 };

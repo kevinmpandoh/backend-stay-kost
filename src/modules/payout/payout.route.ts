@@ -49,4 +49,12 @@ router.post(
   PayoutController.sendPayout
 );
 
+// Cek status payout ke provider
+router.patch(
+  "/:payoutId/check-status",
+  auth,
+  role(["admin"]),
+  PayoutController.checkPayoutStatus
+);
+
 export default router;
