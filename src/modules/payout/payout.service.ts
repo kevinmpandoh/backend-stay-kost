@@ -70,17 +70,15 @@ const createPayout = async ({
 
   if (!owner) throw new ResponseError(404, "Owner tidak ditemukan");
 
-  const amount = invoice.amount;
-  const fee = 5000;
-  const netAmount = amount - fee;
+  const netAmountToOwner = invoice.baseAmount - invoice.serviceFeeOwner;
 
   const payoutData = {
     payoutNumber: generatePayoutNumber(),
     owner: owner._id,
     invoice: invoice._id,
-    amount: amount,
-    platformFee: fee,
-    netAmount,
+    amount: invoice.baseAmount,
+    platformFee: invoice.serviceFeeOwner,
+    netAmount: netAmountToOwner,
     currency: "IDR",
     provider: "midtrans",
   };
@@ -113,7 +111,7 @@ const createPayout = async ({
       const response = await payoutCreator.createPayouts({
         payouts: [
           {
-            amount: env.NODE_ENV === "production" ? netAmount : 1, // untuk testing di sandbox, pakai 1000
+            amount: env.NODE_ENV === "production" ? netAmountToOwner : 1, // untuk testing di sandbox, pakai 1000
             notes: `Payout for invoice ${invoice._id}`,
             beneficiary_name: owner.bank.accountName,
             beneficiary_account: owner.bank.accountNumber,

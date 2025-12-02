@@ -1,0 +1,5 @@
+export const APP_CONFIG = {
+  APP_NAME: "Stay Kost",
+  SERVICE_FEE_OWNER: 2000,
+  SERVICE_FEE_TENANT: 2000,
+};

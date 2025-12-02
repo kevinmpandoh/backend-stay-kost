@@ -299,7 +299,7 @@ export const DashboardService = {
             tahun: { $year: "$dueDate" },
             bulan: { $month: "$dueDate" },
           },
-          total: { $sum: "$amount" }, // total keuntungan admin
+          total: { $sum: "$totalAmount" }, // total keuntungan admin
         },
       },
       { $sort: { "_id.tahun": 1, "_id.bulan": 1 } },

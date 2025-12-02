@@ -43,7 +43,10 @@ class SubscriptionService {
       user: ownerId,
       type: "owner",
       subscription: subscription._id as Types.ObjectId,
-      amount: selectedDuration.price,
+      baseAmount: selectedDuration.price,
+      totalAmount: selectedDuration.price,
+      serviceFeeOwner: 0,
+      serviceFeeTenant: 0,
 
       dueDate: new Date(Date.now() + 24 * 60 * 60 * 1000), // 1 hari
       status: "unpaid",
@@ -155,7 +158,8 @@ class SubscriptionService {
       packageDuration: inv.subscription?.duration
         ? `${inv.metadata?.extendDuration || inv.subscription?.duration} Bulan`
         : "-",
-      totalPrice: inv.amount,
+      baseAmount: inv.baseAmount,
+      totalAmount: inv.totalAmount,
       status: inv.status, // unpaid | paid | expired
       createdAt: dayjs(inv.createdAt).format("D MMMM YYYY"),
     }));
@@ -334,7 +338,10 @@ class SubscriptionService {
       user: ownerId,
       type: "owner",
       subscription: subscription._id as Types.ObjectId,
-      amount: selectedDuration.price,
+      baseAmount: selectedDuration.price,
+      totalAmount: selectedDuration.price,
+      serviceFeeOwner: 0,
+      serviceFeeTenant: 0,
 
       dueDate: new Date(Date.now() + 24 * 60 * 60 * 1000), // 1 hari
       status: "unpaid",

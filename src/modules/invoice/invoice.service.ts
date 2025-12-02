@@ -53,7 +53,10 @@ const getInvoice = async (invoiceNumber: string, userId: string) => {
       id: invoice._id,
       type: "booking",
       invoiceNumber: invoice.invoiceNumber,
-      amount: invoice.amount,
+      baseAmount: invoice.baseAmount,
+      serviceFeeOwner: invoice.serviceFeeOwner,
+      serviceFeeTenant: invoice.serviceFeeTenant,
+      totalAmount: invoice.totalAmount,
       status: invoice.status,
       dueDate: invoice.dueDate,
       kostName: `${kost.name} - ${roomType.name}`,
@@ -75,7 +78,10 @@ const getInvoice = async (invoiceNumber: string, userId: string) => {
       id: invoice._id,
       type: "subscription",
       invoiceNumber: invoice.invoiceNumber,
-      amount: invoice.amount,
+      baseAmount: invoice.baseAmount,
+      serviceFeeOwner: invoice.serviceFeeOwner,
+      serviceFeeTenant: invoice.serviceFeeTenant,
+      totalAmount: invoice.totalAmount,
       status: invoice.status,
       dueDate: invoice.dueDate,
       packageName: pkg.name,
@@ -134,7 +140,7 @@ const createPayment = async (
   const params = generateMidtransParams(
     payload.channel,
     invoiceNumber,
-    invoice.amount,
+    invoice.totalAmount,
     expiryTime
   );
 
@@ -151,7 +157,7 @@ const createPayment = async (
   const payment = await paymentRepository.create({
     invoice: invoice._id,
     user: userId,
-    amount: invoice.amount,
+    amount: invoice.totalAmount,
 
     provider: payload.provider,
     method: payload.method,
@@ -298,7 +304,7 @@ const getOwnerInvoices = async (req: any) => {
 
       dueDate: "$dueDate",
       status: "$status",
-      total: "$amount",
+      total: "$baseAmount",
 
       payout: {
         payoutNumber: "$payout.payoutNumber",
@@ -410,7 +416,10 @@ const getAdminInvoices = async ({
         photo: invoice.user.photo,
       },
       status: invoice.status,
-      amount: invoice.amount,
+      baseAmount: invoice.baseAmount,
+      serviceFeeOwner: invoice.serviceFeeOwner,
+      serviceFeeTenant: invoice.serviceFeeTenant,
+      totalAmount: invoice.totalAmount,
       dueDate: dueDate.format("D MMMM YYYY"),
       daysRemaining: daysDiff,
       isDueToday,
