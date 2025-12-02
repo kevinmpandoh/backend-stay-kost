@@ -11,7 +11,10 @@ export interface IInvoice extends Document {
   booking?: Types.ObjectId | string; // kalau invoice tenant
   subscription?: Types.ObjectId | string; // kalau invoice owner
 
-  amount: number;
+  baseAmount: number;
+  serviceFeeOwner: number;
+  serviceFeeTenant: number;
+  totalAmount: number;
 
   dueDate: Date; // batas bayar
   status: "unpaid" | "paid" | "overdue" | "cancelled";
@@ -34,7 +37,10 @@ const InvoiceSchema = new Schema<IInvoice>(
     subscription: { type: ObjectId, ref: "Subscription" },
 
     // Nominal
-    amount: { type: Number, required: true },
+    baseAmount: { type: Number, required: true },
+    serviceFeeOwner: { type: Number, required: true },
+    serviceFeeTenant: { type: Number, required: true },
+    totalAmount: { type: Number, required: true },
 
     // Status lifecycle
     dueDate: { type: Date, required: true },

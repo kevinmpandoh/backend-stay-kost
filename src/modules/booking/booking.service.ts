@@ -18,7 +18,6 @@ import {
   UpdateBookingPayload,
 } from "./booking.types";
 
-import { FilterQuery, PopulateOptions } from "mongoose";
 import { ResponseError } from "@/utils/response-error.utils";
 import { roomTypeRepository } from "../room-type/room-type.repository";
 import { RoomStatus } from "../room/room.type";
@@ -40,6 +39,7 @@ import {
   stopRequestTemplate,
 } from "@/utils/email-template";
 import path from "path";
+import { APP_CONFIG } from "@/common/constants/app.constant";
 dayjs.locale("id");
 
 export const BookingService = {
@@ -205,7 +205,11 @@ export const BookingService = {
           user: booking.tenant._id,
           type: "tenant",
 
-          amount: booking.totalPrice,
+          baseAmount: booking.totalPrice,
+          serviceFeeOwner: APP_CONFIG.SERVICE_FEE_OWNER,
+          serviceFeeTenant: APP_CONFIG.SERVICE_FEE_TENANT,
+          totalAmount: booking.totalPrice + APP_CONFIG.SERVICE_FEE_TENANT,
+
           dueDate,
           status: "unpaid",
           description: `Tagihan bulan ke-${i + 1}`,
@@ -698,7 +702,7 @@ export const BookingService = {
           jenisKost: kost?.type,
           address: `${kost?.address?.city}, ${kost?.address?.district}`,
           tanggalMasuk: dayjs(booking.startDate).format("D MMMM YYYY"),
-          tanggalKelaur: dayjs(booking.endDate).format("D MMMM YYYY"),
+          tanggalKeluar: dayjs(booking.endDate).format("D MMMM YYYY"),
           tanggalDiajukan: dayjs(booking.createdAt).format("D MMMM YYYY"),
           paymentDeadline: booking.paymentDeadline
             ? booking.paymentDeadline
@@ -925,7 +929,9 @@ export const BookingService = {
           id: invoice._id,
           kostName: `${kost?.name} - ${roomType.name}`,
           invoiceNumber: invoice.invoiceNumber,
-          amount: invoice.amount,
+          baseAmount: invoice.baseAmount,
+          totalAmount: invoice.totalAmount,
+          serviceFeeTenant: invoice.serviceFeeTenant,
           dueDate: dayjs(invoice.dueDate).format("D MMMM YYYY"),
           status: invoice.status,
           daysRemaining: daysDiff,

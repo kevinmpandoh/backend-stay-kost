@@ -16,6 +16,7 @@ import { reviewRepository } from "../review/review.repository";
 import { subscriptionRepository } from "../subscription/subscription.repository";
 import { bookingRepository } from "../booking/booking.repository";
 import { BookingStatus } from "../booking/booking.types";
+import { APP_CONFIG } from "@/common/constants/app.constant";
 
 const getAll = async (query: any) => {
   // return await kostRepository.findRoomTypesWithFilters(query);
@@ -293,6 +294,7 @@ const getDetailKostPublic = async (roomTypeId: string) => {
     name: `${kost.name} - ${roomType.name}`,
     description: kost.description,
     price: roomType.price,
+    serviceFeeTenant: APP_CONFIG.SERVICE_FEE_TENANT,
     type: kost.type,
     rules: kost.rules.map((rule: any) => rule.name),
     roomFacilities: roomType.facilities.map((f: any) => f.name),
