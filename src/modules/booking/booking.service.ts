@@ -206,7 +206,6 @@ export const BookingService = {
           type: "tenant",
 
           baseAmount: booking.totalPrice,
-          serviceFeeOwner: APP_CONFIG.SERVICE_FEE_OWNER,
           serviceFeeTenant: APP_CONFIG.SERVICE_FEE_TENANT,
           totalAmount: booking.totalPrice + APP_CONFIG.SERVICE_FEE_TENANT,
 

@@ -159,7 +159,6 @@ export class InvoiceRepository extends BaseRepository<IInvoice> {
         user: invoice.user,
         status: invoice.status,
         baseAmount: invoice.baseAmount,
-        serviceFeeOwner: invoice.serviceFeeOwner,
         serviceFeeTenant: invoice.serviceFeeTenant,
         dueDate: dueDate.format("D MMMM YYYY"),
         daysRemaining: daysDiff,
