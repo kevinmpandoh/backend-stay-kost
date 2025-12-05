@@ -12,7 +12,6 @@ export interface IInvoice extends Document {
   subscription?: Types.ObjectId | string; // kalau invoice owner
 
   baseAmount: number;
-  serviceFeeOwner: number;
   serviceFeeTenant: number;
   totalAmount: number;
 
@@ -38,7 +37,6 @@ const InvoiceSchema = new Schema<IInvoice>(
 
     // Nominal
     baseAmount: { type: Number, required: true },
-    serviceFeeOwner: { type: Number, required: true },
     serviceFeeTenant: { type: Number, required: true },
     totalAmount: { type: Number, required: true },
 

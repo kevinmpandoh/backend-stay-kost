@@ -13,6 +13,8 @@ import { mapPayoutError } from "@/utils/payoutErrorMapper";
 import { env } from "@/config/env";
 import { notificationService } from "../notification/notification.service";
 import e from "express";
+import { subscriptionService } from "../subscription/subscription.service";
+import { APP_CONFIG } from "@/common/constants/app.constant";
 
 const getAllPayout = async ({
   query,
@@ -70,14 +72,28 @@ const createPayout = async ({
 
   if (!owner) throw new ResponseError(404, "Owner tidak ditemukan");
 
-  const netAmountToOwner = invoice.baseAmount - invoice.serviceFeeOwner;
+  const subscription = await subscriptionService.getCurrentSubscription(
+    ownerId
+  );
+
+  let serviceFeeOwner = 0;
+
+  if (subscription && subscription.status !== "active") {
+    serviceFeeOwner = APP_CONFIG.SERVICE_FEE_OWNER;
+  } else if (!subscription) {
+    serviceFeeOwner = APP_CONFIG.SERVICE_FEE_OWNER;
+  } else {
+    serviceFeeOwner = 0;
+  }
+
+  const netAmountToOwner = invoice.baseAmount - serviceFeeOwner;
 
   const payoutData = {
     payoutNumber: generatePayoutNumber(),
     owner: owner._id,
     invoice: invoice._id,
     amount: invoice.baseAmount,
-    platformFee: invoice.serviceFeeOwner,
+    platformFee: serviceFeeOwner,
     netAmount: netAmountToOwner,
     currency: "IDR",
     provider: "midtrans",

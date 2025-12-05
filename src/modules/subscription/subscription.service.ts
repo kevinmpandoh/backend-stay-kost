@@ -45,7 +45,6 @@ class SubscriptionService {
       subscription: subscription._id as Types.ObjectId,
       baseAmount: selectedDuration.price,
       totalAmount: selectedDuration.price,
-      serviceFeeOwner: 0,
       serviceFeeTenant: 0,
 
       dueDate: new Date(Date.now() + 24 * 60 * 60 * 1000), // 1 hari
@@ -340,7 +339,6 @@ class SubscriptionService {
       subscription: subscription._id as Types.ObjectId,
       baseAmount: selectedDuration.price,
       totalAmount: selectedDuration.price,
-      serviceFeeOwner: 0,
       serviceFeeTenant: 0,
 
       dueDate: new Date(Date.now() + 24 * 60 * 60 * 1000), // 1 hari
